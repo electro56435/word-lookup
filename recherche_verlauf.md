@@ -219,3 +219,69 @@
 
 **Quelle:** wbnetz_dwb · 5 Quellen
 
+## Korn — 2026-04-24 21:18
+
+**Definition:** korn , verbalform, s. kiesen und kerren. korn , n. granum. I. Formen und verwandtschaft. a) goth. doppelt, mit schwesterwort kern m. hd. von jeher bis heute auch. bei korn aber ist sonst nur starke form bezeugt: althochdeutsch chorn, mittelhochdeutsch korn, ebenso altsächsisch …
+
+**Quelle:** wbnetz_dwb · 6 Quellen
+
+## Kimme — 2026-04-24 21:18
+
+**Definition:** kimme , fischohr, s. kieme . kimme , f. ein schwieriges mitteld. und niederd. wort. 1) Kerbe, crena, incisura. Stieler 947. a) es ist noch thüringisch, eine kimme in einen stock schneiden, auch arschkimme arschkerbe ( Arnstadt ): wird ( vom v. G. Agricola bergwerk (1557) 135 . …
+
+**Quelle:** wbnetz_dwb · 4 Quellen
+
+## amboss — 2026-04-24 21:19
+
+**Definition:** Menü Frühneuhochdeutsches Wörterbuch Q Hinweise zur Benutzung des Wörterbuchs (Kurzeinleitung) Lexikographische Einleitung FWB-online-Hilfe FAQ - Häufig gestellte Fragen Abkürzungsverzeichnis Mitarbeiterverzeichnis Alphabetischer Einstieg Verfügbare Alphabetsstrecken Quellen- …
+
+**Quelle:** fwb · 3 Quellen
+
+## splinter — 2026-04-24 21:23
+
+**Definition:** splinter , m. splitter, span. nebenform zu splitter, s. das. und splint. besonders dem nl. ( -nd. ) gebiete an; so schon mittelniederländisch splenter, splinter. sentrix ... doern vel splinter. Dief. gl. 527 b ( lateinisch-nd. voc. 1420); splinter, assula, schidium, aculeus …
+
+**Quelle:** wbnetz_dwb · 1 Quellen
+
+
+## splinter — 2026-04-24 21:23
+
+**Definition:** splinter, m. splitter, span. nebenform zu splitter ... besonders dem nl. gebiete an; so schon mnl. splenter, splinter.
+
+**Quelle:** wbnetz_dwb · 1 Quelle
+
+**Ersatzwort:** Span
+
+**Erklärung:** Ein Splitter ist ein kleines, scharfes Stück von Holz, Glas oder Metall. Wenn du dich an einem Splitter verletzt, hast du dich an einem kleinen, spitzen Stück davon gestochen.
+
+---
+## Rümpf — 2026-04-24 21:26
+
+**Definition:** Bedeutungsindex »rümpfen« 1. ›runzlig, faltig werden, sein (durch Trockenheit, 2. ›sich zusammenziehen, krümmen (z. B. vor 3. ›sich (ungehalten, unwillig) abwenden‹; 4. ›sich kümmern, sorgen‹. 5. ›ein bestimmtes Kartenspiel spielen‹.
+
+**Quelle:** fwb · 3 Quellen
+
+## Rümpf — 2026-04-24 21:27
+
+**Definition:** Rumpf, Schiffskörper, Schiffsrumpf, Torso, Stamm, Oberkörper
+
+**Quelle:** openthesaurus · 2 Quellen
+
+## Rümpf — 2026-04-24 21:27
+
+**Definition:** Rumpf, Schiffskörper, Schiffsrumpf, Torso, Stamm, Oberkörper
+
+**Quelle:** openthesaurus · 2 Quellen
+
+## haus — 2026-04-24 21:27
+
+**Definition:** haus , n. domus. I. form und herkunft. Im gothischen ist das jahrh. in den diphthongen umsetzt, so dasz dort house, hier haus entsteht. auf letzterem grunde ruht die neuhochdeutsch schriftform. das mittelniederländisch augenbraue, σκύ - τος haut, leder, lateinisch scû-tum …
+
+**Quelle:** wbnetz_dwb · 5 Quellen
+
+## Fehde — 2026-04-24 21:30
+
+**Definition:** fehde , f. inimicitia, discordia, odium, althochdeutsch fêhida, gifêhida ( Graff 3, 385 andern partei, trägt eine andere farbe, ist ein gegner. discordia, fehde gehen aus dem begrif der buntheit, concordia, friede aus dem 3, 384 ). nach dieser untersuchung liegt von faihiþa, …
+
+**Quelle:** wbnetz_dwb · 3 Quellen
+
