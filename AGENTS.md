@@ -5,7 +5,7 @@ CLI and MCP server for looking up historical and archaic German words from up to
 ## Quick Start
 
 ```bash
-python word_lookup.py <word> --json
+python3 word_lookup.py <word> --json
 ```
 
 ## Calling from Python
@@ -14,7 +14,7 @@ python word_lookup.py <word> --json
 import subprocess, json
 
 def lookup_word(word: str, sources: list[str] | None = None) -> dict:
-    cmd = ["python", "word_lookup.py", word, "--json"]
+    cmd = ["python3", "word_lookup.py", word, "--json"]
     if sources:
         cmd += ["--sources", ",".join(sources)]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
@@ -53,8 +53,8 @@ Wörterbuchnetz sources receive a **1.5× quality bonus** and return reconstruct
 Wörterbuchnetz sources (`wbnetz_*`) only appear in the result when the Meta API finds an entry for the queried word. Requesting them via `--sources` has no effect if the word is not indexed.
 
 ```bash
-python word_lookup.py --list-sources          # list all source keys
-python word_lookup.py minne --sources wbnetz_lexer,wbnetz_bmz --json
+python3 word_lookup.py --list-sources          # list all source keys
+python3 word_lookup.py minne --sources wbnetz_lexer,wbnetz_bmz --json
 ```
 
 ## Error Handling
@@ -106,7 +106,7 @@ Auslöser: Nutzer gibt ein einzelnes Wort, z.B. „modernisiere: Minne" oder „
 
 **Schritt 1 — Nachschlagen (immer zuerst):**
 ```bash
-python word_lookup.py <wort> --json
+python3 word_lookup.py <wort> --json
 ```
 Das Ergebnis kommt als JSON auf stdout. Relevant: `best_definition.definition`, `best_definition.source`, `best_definition.score`.
 
@@ -139,7 +139,7 @@ Analysiere den Text und identifiziere alle Wörter, die Kinder heute nicht kenne
 
 **Schritt 2 — Nachschlagen (für jedes Wort):**
 ```bash
-python word_lookup.py <wort> --json
+python3 word_lookup.py <wort> --json
 ```
 Für jedes identifizierte Wort ausführen.
 
