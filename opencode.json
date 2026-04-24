@@ -1,0 +1,38 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": {
+      "python3*scripts/word_lookup*": "allow",
+      "python3*scripts/docx_to_md*": "allow",
+      "python3*scripts/replace_in_book*": "allow"
+    },
+    "task": {
+      "*": "ask",
+      "general": "allow",
+      "explore": "allow",
+      "kinderbuch-evaluator": "allow"
+    }
+  },
+  "agent": {
+    "build": {
+      "permission": {
+        "task": {
+          "*": "ask",
+          "general": "allow",
+          "explore": "allow",
+          "kinderbuch-evaluator": "allow"
+        }
+      }
+    },
+    "plan": {
+      "permission": {
+        "task": {
+          "*": "ask",
+          "general": "allow",
+          "explore": "allow",
+          "kinderbuch-evaluator": "allow"
+        }
+      }
+    }
+  }
+}
