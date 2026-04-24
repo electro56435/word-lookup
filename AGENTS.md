@@ -263,13 +263,13 @@ Auslöser: Nutzer hat eine `.docx`-Datei und möchte Wörter direkt im Buchtext 
 
 Wenn noch keine `.md`-Version des Buchs existiert:
 ```bash
-python3 docx_to_md.py <pfad/zum/buch.docx> -o buch.md
+python3 docx_to_md.py <pfad/zum/buch.docx> -o <buchname>.md
 ```
-Die erzeugte `buch.md` ist die Arbeitsdatei für alle weiteren Schritte.
+Die erzeugte `<buchname>.md` ist die Arbeitsdatei für alle weiteren Schritte.
 
 #### Schritt 1 — Wort nachschlagen (Modus A, Schritte 1–3)
 
-Für das gewünschte Wort vollständig Modus A durchlaufen. Dabei `BUCHDATEI = buch.md` im Arbeitskontext merken.
+Für das gewünschte Wort vollständig Modus A durchlaufen. Dabei `BUCHDATEI = <buchname>.md` im Arbeitskontext merken.
 
 #### Schritt 2 — Bestätigung einholen
 
@@ -283,12 +283,12 @@ Erst nach explizitem Ja weitermachen. Kein implizites Annehmen.
 
 Vorschau zuerst:
 ```bash
-python3 replace_in_book.py buch.md "[Originalwort]" "[Ersatzwort]" --dry-run
+python3 replace_in_book.py <buchname>.md "[Originalwort]" "[Ersatzwort]" --dry-run
 ```
 
 Wenn Vorschau korrekt aussieht, Ersetzung durchführen:
 ```bash
-python3 replace_in_book.py buch.md "[Originalwort]" "[Ersatzwort]"
+python3 replace_in_book.py <buchname>.md "[Originalwort]" "[Ersatzwort]"
 ```
 
 Bei mehreren Vorkommen (z.B. „Minne" kommt 12× vor): User fragen, ob alle ersetzt werden sollen (`--all`), oder nur erstes, oder bestimmte Stellen.
