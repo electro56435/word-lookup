@@ -131,7 +131,7 @@ python3 scripts/server.py
 }
 ```
 
-**OpenCode / Bash-Permissions:** Beispiel liegt im Repo: `scripts/opencode.json` (Schema `opencode.ai`). Pfade in der lokalen OpenCode-Config ggf. anpassen, nicht blind kopieren, wenn dein Config-Format abweicht.
+**OpenCode / Bash-Permissions:** Beispiel liegt im Repo: `opencode.json` in der **Repository-Wurzel** (Schema `opencode.ai`, Subagent `kinderbuch-evaluator`). Pfade in der lokalen OpenCode-Config ggf. anpassen, nicht blind kopieren, wenn dein Config-Format abweicht.
 
 **Tools des Servers:** `lookup_word`, `docx_to_markdown` — Beschreibung in `scripts/server.py`, Prompt-Texte in `scripts/AGENT_PROMPT.md` und in `AGENTS.md` (Kontext „Kinderbuch-Workflow“).
 

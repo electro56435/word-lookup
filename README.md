@@ -2,7 +2,7 @@
 
 CLI und MCP-Server zum Nachschlagen historischer und archaischer deutscher Wörter. Das Skript fragt bis zu neun Quellen gleichzeitig ab und wählt automatisch die beste Definition aus.
 
-**Projektlayout:** In der Wurzel liegen u. a. diese Anleitung, `AGENTS.md`, `CLAUDE.md` und `recherche_verlauf.md`. Der **Code** (Python, `AGENT_PROMPT.md`, `opencode.json`) liegt in **`scripts/`**.
+**Projektlayout:** In der Wurzel liegen u. a. diese Anleitung, `AGENTS.md`, `CLAUDE.md`, `recherche_verlauf.md`, **`opencode.json`** und **`.opencode/agents/`** (OpenCode-Subagent Kinderbuch-Evaluator). Der **Code** (Python, `AGENT_PROMPT.md`) liegt in **`scripts/`**.
 
 ## Was macht das Skript?
 

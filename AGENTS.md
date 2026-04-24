@@ -2,7 +2,7 @@
 
 CLI und MCP-Server zum Nachschlagen deutscher Wörter aus bis zu neun Quellen parallel.
 
-**Layout:** Quellcode und Hilfsskripte liegen in **`scripts/`** (z. B. `word_lookup.py`, `server.py`, `AGENT_PROMPT.md`, `opencode.json`). In der Wurzel u. a. `README.md`, `AGENTS.md`, `CLAUDE.md`, `recherche_verlauf.md`.
+**Layout:** Quellcode und Hilfsskripte liegen in **`scripts/`** (z. B. `word_lookup.py`, `server.py`, `AGENT_PROMPT.md`). **OpenCode:** `opencode.json` in der **Repository-Wurzel** plus Subagent **`/.opencode/agents/kinderbuch-evaluator.md`** (wird nach der JSON-Config geladen). In der Wurzel u. a. `README.md`, `AGENTS.md`, `CLAUDE.md`, `recherche_verlauf.md`.
 
 ---
 
@@ -115,9 +115,17 @@ System-Prompt-Template für Agenten: siehe `scripts/AGENT_PROMPT.md`.
 
 **Altersgruppe:** Standard **Grundschule (6–9 Jahre)** — sehr einfache, direkte Sprache, keine Fremdwörter. Kann per Nutzernachricht überschrieben werden (z.B. „für 10–12-Jährige").
 
-**Zwei Agenten:**
-- **Orchestrator** (dieser Agent): sammelt alle Rohdaten, übergibt sie strukturiert an den Kinderbuch-Evaluator.
-- **Kinderbuch-Evaluator**: bewertet die Rohdaten und schreibt die kindgerechte Ausgabe. System-Prompt: `scripts/AGENT_PROMPT.md`.
+**Zwei Rollen (konzeptionell):**
+- **Orchestrator:** Pipeline + Web-Recherche, dann sichtbarer Handoff-Block (Schritt 3).
+- **Kinderbuch-Evaluator:** kindgerechte Ausgabe nur aus dem Block — Prompt: `scripts/AGENT_PROMPT.md`.
+
+**OpenCode:** Wenn das **Task-Tool** den Subagenten **`kinderbuch-evaluator`** anbietet (definiert in **`.opencode/agents/kinderbuch-evaluator.md`**, Task-Rechte in **`opencode.json`**): nach dem Handoff-Block **Task** ausführen, Task-Text = kompletter Block. Antwort des Subagenten ungekürzt ausgeben.
+
+**Pflicht — Fallback ohne Subagent (z. B. Cursor, OpenCode ohne geladenes `opencode.json`, Task-Liste ohne `kinderbuch-evaluator`):** Der Subagent ist in dieser Umgebung **nicht spawnbar**. Das ist **kein Grund zum Abbruch**. Unmittelbar nach dem Handoff-Block: die Regeln aus **`scripts/AGENT_PROMPT.md`** auf genau diesen Block anwenden und die Ausgabe **im dort festgelegten Format** (`**Ersatzwort:**` …) in **derselben Antwort** liefern. **Verboten:** Texte wie „Subagent nicht verfügbar“, „nicht verfügbar in der aktuellen Session“ oder nur Rohdaten ohne kindgerechte Ausgabe — die Pipeline gilt erst mit Evaluator-Format als fertig.
+
+**OpenCode — dauerhaft 🚫 / Permission auf Task:** (1) Arbeitsverzeichnis = **Git-Root dieses Repos** (OpenCode lädt Config beim Start nach oben bis zur `.git`). (2) **App komplett neu starten** nach Änderungen an `opencode.json` / `.opencode/`. (3) In **`~/.config/opencode/opencode.json`** kann `permission.task` mit z. B. nur `general` / `explore` freigeben — dann fehlt **`kinderbuch-evaluator`**. Ergänzen, **nach** einer eventuellen `*`-Regel, z. B. `"kinderbuch-evaluator": "allow"` (letzte passende Regel gewinnt). (4) **MDM-/Managed-Config** (`/Library/Application Support/opencode/` etc.) kann Projekt-Settings überschreiben — dann nur IT oder lokale Managed-Datei anpassen. (5) Bei „Task erlauben?“: **Zulassen** oder „immer für diesen Subagenten“. (6) Geht es weiterhin nicht: **Fallback** wie oben (`AGENT_PROMPT` im selben Lauf).
+
+**OpenCode — Zod: „must start with ses“ (oder „prt“):** Das ist **keine** Permission, sondern **interne ID-Validierung** (Session-/Message-Präfixe). Häufig: **Plugin** verändert Nachrichten-IDs (bekannt z. B. bei Integrationen, die den Chat-Stream hooken) oder **veraltete OpenCode-Version**. Vorgehen: OpenCode **aktualisieren**; in der globalen Config **`plugin` testweise leer** setzen und Task erneut testen; **`task_id` beim Task-Tool nur setzen**, wenn ihr wirklich eine vorherige Subagent-Aufgabe **fortsetzt** (sonst weglassen — kein freier Text wie „Fehde“). Der **Handoff-Block** gehört immer in **`prompt`**, nicht in ID-Felder. Wenn der Fehler bleibt: **Fallback** (`AGENT_PROMPT` im gleichen Lauf ohne Task).
 
 ---
 
@@ -185,7 +193,7 @@ WEB-ERGEBNISSE:
   fuzzy: <ergebnisse aus Fuzzy-Suche oder leer>
 ```
 
-Erst nach Ausgabe dieses Blocks: Evaluator mit System-Prompt `scripts/AGENT_PROMPT.md` aufrufen und den Block als Eingabe übergeben. Der Evaluator gibt die fertige Ausgabe zurück (Ersatzwort + Erklärung + Quelle).
+Erst nach Ausgabe dieses Blocks: **OpenCode:** Task-Tool → `kinderbuch-evaluator` mit exakt diesem Block. **Sonst:** Evaluator-Ausgabe wie in `scripts/AGENT_PROMPT.md` im selben Lauf erzeugen (kein Abbruch wegen fehlendem Subagenten).
 
 #### Schritt 4 — Recherche-Log aktualisieren
 
@@ -249,7 +257,7 @@ WORT: fehde
 ...
 ```
 
-Erst nach Ausgabe aller Blöcke: Evaluator mit System-Prompt `scripts/AGENT_PROMPT.md` aufrufen. Der Evaluator gibt für jedes Wort Ersatzwort + Erklärung zurück.
+Erst nach Ausgabe aller Blöcke: **OpenCode:** Task → `kinderbuch-evaluator` mit allen Blöcken. **Sonst:** `scripts/AGENT_PROMPT.md` auf alle Blöcke anwenden — für jedes Wort Ersatzwort + Erklärung im vorgegebenen Format.
 
 #### Schritt 4 — Ausgabe zusammenbauen
 
@@ -323,8 +331,9 @@ Bei mehreren Vorkommen (z.B. „Minne" kommt 12× vor): User fragen, ob alle ers
 - **Pipeline MUSS ausgeführt werden** — `scripts/word_lookup.py` ist Pflicht, kein optionaler Schritt.
 - **Web-Recherche MUSS ausgeführt werden** — parallel zur Pipeline, immer, nicht nur als Fallback. Ohne Web-Ergebnisse ist Schritt 3 gesperrt.
 - **Fuzzy-Fallback bei Nulltreffer** — Varianten + Websuche vor eigenem Vorschlag.
-- **Orchestrator formuliert NICHTS selbst** — kein Ersatzwort, keine Erklärung, keine kindgerechte Ausgabe produzieren. Das ist ausschließlich Aufgabe des Kinderbuch-Evaluators.
-- **Handoff-Block ist Pflicht** — der Datenblock aus Schritt 3 muss sichtbar ausgegeben werden, bevor der Evaluator aufgerufen wird. Ein Handoff, der intern bleibt, gilt als nicht durchgeführt.
+- **Orchestrator ohne Evaluator-Rolle:** Solange der Handoff-Block noch nicht da ist, kein Ersatzwort und keine kindgerechte Erklärung ausgeben. **Nach** dem Block: **entweder** Task → `kinderbuch-evaluator` **oder** (wenn Subagent nicht verfügbar) dieselbe Ausgabe wie der Evaluator laut `scripts/AGENT_PROMPT.md` — nie mit „Subagent fehlt“ enden.
+- **Task-Tool** in OpenCode bevorzugen; fehlt es, zählt der **AGENT_PROMPT-Fallback** als vollständige Pipeline.
+- **Handoff-Block ist Pflicht** — der Datenblock aus Schritt 3 muss sichtbar ausgegeben werden, bevor der Task-Aufruf erfolgt. Ein Handoff, der intern bleibt, gilt als nicht durchgeführt.
 - **Keine Abkürzungen** im Log — „althochdeutsch" statt „ahd.", „mittelhochdeutsch" statt „mhd." — oder weglassen wenn für Kinder irrelevant.
 - **Ton im Evaluator:** warm und ermutigend, nicht akademisch.
 - **Format:** keine langen Einleitungen, keine Verabschiedungen.
