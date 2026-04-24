@@ -32,7 +32,7 @@ SLEEP_BETWEEN  = 0.4
 HEADERS        = {"User-Agent": "Mozilla/5.0 (compatible; WortLookupBot/1.0)"}
 TEI_NS         = "https://www.tei-c.org/ns/1.0"
 WBNETZ_SIGLES  = ("DWB", "Adelung", "AWB", "Lexer", "BMZ")
-WBNETZ_METHODS = {"Lexer": "definition", "BMZ": "definition"}  # others → fulltext
+WBNETZ_METHODS = {"BMZ": "definition"}  # Lexer uses fulltext (definition returns only compounds)
 WBNETZ_API     = "https://api.woerterbuchnetz.de/open-api/dictionaries"
 WBNETZ_HDRS    = {"Accept": "application/json", "User-Agent": "Mozilla/5.0 (compatible; WortLookupBot/1.0)"}
 KWIC_MAX       = 15  # max KWIC windows fetched per entry
@@ -202,16 +202,23 @@ def fetch_woerterbuchnetz_entry(sigle: str, word: str) -> Dict[str, Any]:
     source_key = f"wbnetz_{sigle.lower()}"
     method = WBNETZ_METHODS.get(sigle, "fulltext")
 
-    try:
-        r = requests.get(
-            f"{WBNETZ_API}/{sigle}/{method}/{requests.utils.quote(word)}",
-            headers=WBNETZ_HDRS,
-            timeout=TIMEOUT,
-        )
-        r.raise_for_status()
-        data = r.json()
-    except Exception as e:
-        return {"source": source_key, "success": False, "error": str(e)}
+    url = f"{WBNETZ_API}/{sigle}/{method}/{requests.utils.quote(word)}"
+    data = None
+    for attempt in range(2):
+        try:
+            r = requests.get(url, headers=WBNETZ_HDRS, timeout=TIMEOUT)
+            if r.status_code >= 500 and attempt == 0:
+                time.sleep(1.0)
+                continue
+            r.raise_for_status()
+            data = r.json()
+            break
+        except Exception as e:
+            if attempt == 1:
+                return {"source": source_key, "success": False, "error": str(e)}
+            time.sleep(1.0)
+    if data is None:
+        return {"source": source_key, "success": False, "error": "Keine Antwort vom Server"}
 
     rs = data.get("result_set", [])
     exact = [x for x in rs if x.get("lemma", "").lower() == word.lower()]
@@ -253,16 +260,32 @@ def fetch_woerterbuchnetz_entry(sigle: str, word: str) -> Dict[str, Any]:
 # ── FWB-online ────────────────────────────────────────────────────────────────
 
 def fetch_fwb(word: str) -> Dict[str, Any]:
-    """FWB-online — Frühneuhochdeutsch. Slug-Format: {wort}.s.1f (best-effort)."""
-    slug = word.lower() + ".s.1f"
-    r = safe_get(f"https://fwb-online.de/lemma/{slug}")
-    if not r["success"]:
-        return {"source": "fwb", "success": False, "error": "Nicht gefunden"}
+    """FWB-online — Frühneuhochdeutsch. Slug via Search-HTML, dann Lemma-Seite scrapen."""
+    search = safe_get(
+        "https://fwb-online.de/search",
+        params={"q": word.lower(), "type": "lemma"},
+    )
+    if not search["success"]:
+        return {"source": "fwb", "success": False, "error": "Suche fehlgeschlagen"}
 
     try:
-        soup = BeautifulSoup(r["data"], "html.parser")
-        article = soup.find(class_="artikel") or soup.find("article") or soup.find("main")
-        text = clean_text(article.get_text(" ", strip=True) if article else soup.get_text(), maxlen=2500)
+        soup = BeautifulSoup(search["data"], "html.parser")
+        prefix = f"/lemma/{word.lower()}."
+        link = next(
+            (a["href"] for a in soup.find_all("a", href=True) if a["href"].startswith(prefix)),
+            None,
+        )
+        if not link:
+            return {"source": "fwb", "success": False, "error": "Kein Lemma gefunden"}
+
+        slug_path = link.split("?")[0]
+        r = safe_get(f"https://fwb-online.de{slug_path}")
+        if not r["success"]:
+            return {"source": "fwb", "success": False, "error": "Lemma-Seite nicht erreichbar"}
+
+        page = BeautifulSoup(r["data"], "html.parser")
+        article = page.find(class_="artikel") or page.find("article") or page.find("main")
+        text = clean_text(article.get_text(" ", strip=True) if article else page.get_text(), maxlen=2500)
         return {
             "source": "fwb",
             "success": bool(text),
@@ -324,11 +347,19 @@ def save_to_history(result: Dict[str, Any]) -> None:
     """Hängt das Recherche-Ergebnis formatiert an HISTORY_FILE an."""
     try:
         best = result.get("best_definition", {})
+        definition = best.get("definition", "").strip()
+        if not definition or best.get("score", 0) == 0:
+            return
+        source = best.get("source", "unbekannt")
+        timestamp = result.get("timestamp", "")[:16]  # "2026-04-24 16:35"
+        word = result.get("word", "")
+        summary = result.get("summary", "")
+        count_match = re.search(r"(\d+) Quellen", summary)
+        count = count_match.group(1) if count_match else "?"
         entry = (
-            f"## {result.get('timestamp', '')} – {result.get('word', '')}\n\n"
-            f"**Bedeutung:**  \n{best.get('definition', 'Keine Definition gefunden.')}\n\n"
-            f"**Quelle:** {best.get('source', 'unbekannt')}\n\n"
-            f"**Zusammenfassung:** {result.get('summary', '')}\n\n---\n\n"
+            f"## {word} — {timestamp}\n\n"
+            f"**Definition:** {definition}\n\n"
+            f"**Quelle:** {source} · {count} Quellen\n\n"
         )
         with open(HISTORY_FILE, "a", encoding="utf-8") as f:
             f.write(entry)
@@ -357,10 +388,23 @@ def lookup_word(word: str, sources: Optional[List[str]] = None) -> Dict[str, Any
         if src_filter is None or key in src_filter:
             tasks[key] = fn
 
-    for entry in wbnetz_entries[:4]:
+    seen_sigles: set = set()
+    for entry in wbnetz_entries:
+        if entry["sigle"] in seen_sigles:
+            continue
+        seen_sigles.add(entry["sigle"])
         key = f"wbnetz_{entry['sigle'].lower()}"
         if src_filter is None or key in src_filter:
             tasks[key] = lambda e=entry: fetch_woerterbuchnetz_entry(e["sigle"], word)
+
+    if not tasks:
+        return {
+            "word": word,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "sources": {},
+            "best_definition": {"source": "none", "definition": "", "score": 0},
+            "summary": "Keine Quellen gefunden.",
+        }
 
     result_sources: Dict[str, Any] = {}
     with ThreadPoolExecutor(max_workers=min(len(tasks), 8)) as ex:
