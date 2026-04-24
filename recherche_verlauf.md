@@ -69,3 +69,33 @@
 **Erklärung:** Das alte Wort „Minne" bedeutet „Liebe". Es beschreibt das warme Gefühl, das man für jemanden hat, den man sehr mag — besonders in der höfischen Zeit im Mittelalter ritten Ritter für ihre angebetete Dame.
 
 ---
+## Kajüte — 2026-04-24 17:51
+
+**Definition:** Wohnraum und Schlafraum auf einem Sportboot oder Lastkahn
+
+**Quelle:** dwds · 2 Quellen
+
+## gremium — 2026-04-24 18:00
+
+**Definition:** Arbeitskreis, Ausschuss, Beirat, Gremium, Junta, Komitee, Kommission, Rat
+
+**Quelle:** openthesaurus · 2 Quellen
+
+## Gremium — 2026-04-24 18:05
+
+**Definition:** Arbeitskreis, Ausschuss, Beirat, Gremium, Junta, Komitee, Kommission, Rat
+
+**Quelle:** openthesaurus · 2 Quellen
+
+## wit — 2026-04-24 19:59
+
+**Definition:** wit , wid , m. , im althochdeutsch und mittelhochdeutsch auch n., ' wald, holz wort: althochdeutsch widu, witu, wito, m. und n.; mittelhochdeutsch wite, wit, m. und n.; mittelniederdeutsch wede, m.; mittelniederländisch wede, f. (?); ags. wit , vergleiche unter 2, kranwit teil …
+
+**Quelle:** wbnetz_dwb · 2 Quellen
+
+## wite — 2026-04-24 20:00
+
+**Definition:** wite , wit n. holz, brennholz Diem. Lampr. Spec. Helmbr. Ms. R. den wit er dâ vaile truoc Kchr. D. 55,1, wite 118,8. er treit waʒʒer, stein und wit Teichn. A. 201
+
+**Quelle:** wbnetz_lexer · 1 Quellen
+

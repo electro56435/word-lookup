@@ -1,14 +1,20 @@
 # word-lookup — Agent Reference
 
-CLI and MCP server for looking up historical and archaic German words from up to nine sources in parallel. Returns structured JSON with an auto-selected `best_definition` field.
+CLI und MCP-Server zum Nachschlagen deutscher Wörter aus bis zu neun Quellen parallel.
 
-## Quick Start
+---
+
+## 1. Technische Referenz
+
+### CLI-Nutzung
 
 ```bash
-python3 word_lookup.py <word> --json
+python3 word_lookup.py <wort> --json
+python3 word_lookup.py --list-sources
+python3 word_lookup.py minne --sources wbnetz_lexer,wbnetz_bmz --json
 ```
 
-## Calling from Python
+### Python-Aufruf
 
 ```python
 import subprocess, json
@@ -23,61 +29,56 @@ def lookup_word(word: str, sources: list[str] | None = None) -> dict:
     return {"error": result.stderr}
 ```
 
-## Output Fields
+### Output-Felder
 
-| Field | Content | Recommendation |
-|-------|---------|----------------|
-| `best_definition.definition` | Richest definition across all sources | **Use this first** |
-| `best_definition.source` | Source key (e.g. `wbnetz_dwb`) | Include in citations |
-| `best_definition.score` | Quality score (length × source bonus) | Confidence estimate |
-| `summary` | Human-readable result count | Quick sanity check |
-| `sources.<key>.definitions` | Raw definitions per source | Deep analysis |
-| `sources.openthesaurus.definitions` | Comma-separated synonyms | Synonym lookup |
+| Feld | Inhalt | Empfehlung |
+|------|--------|------------|
+| `best_definition.definition` | Reichste Definition aus allen Quellen | **Zuerst verwenden** |
+| `best_definition.source` | Quell-Key (z.B. `wbnetz_dwb`) | In Zitaten angeben |
+| `best_definition.score` | Qualitätsscore (Länge × Quell-Bonus) | Konfidenzschätzung |
+| `summary` | Lesbare Trefferzusammenfassung | Schnell-Plausibilität |
+| `sources.<key>.definitions` | Rohdefinitionen je Quelle | Tiefenanalyse |
+| `sources.openthesaurus.definitions` | Kommagetrennte Synonyme | Synonymsuche |
 
-Wörterbuchnetz sources receive a **1.5× quality bonus** and return reconstructed full articles from historical German dictionaries. All other sources receive either a 1.2× (Wiktionary) or 1.0× bonus.
+Wörterbuchnetz-Quellen erhalten einen **1,5×-Qualitätsbonus** und liefern rekonstruierte Vollartikel aus historischen Wörterbüchern. Wiktionary: 1,2×. Alle anderen: 1,0×.
 
-## Available Sources
+### Verfügbare Quellen
 
-| Key | Dictionary | Period |
+| Key | Wörterbuch | Epoche |
 |-----|-----------|--------|
-| `wbnetz_dwb` | Deutsches Wörterbuch (Grimm) | 16th–19th c. |
-| `wbnetz_adelung` | Adelung | 18th c. |
-| `wbnetz_awb` | Althochdeutsches Wörterbuch | 8th–11th c. |
-| `wbnetz_lexer` | Lexer (Middle High German) | 12th–15th c. |
-| `wbnetz_bmz` | Benecke-Müller-Zarncke (MHD) | 12th–15th c. |
-| `fwb` | Frühneuhochdeutsches Wörterbuch | 14th–17th c. |
-| `dwds` | DWDS | Modern + historical |
-| `wiktionary` | Wiktionary DE | All periods, etymology |
-| `openthesaurus` | OpenThesaurus | Synonyms (modern) |
+| `wbnetz_dwb` | Deutsches Wörterbuch (Grimm) | 16.–19. Jh. |
+| `wbnetz_adelung` | Adelung | 18. Jh. |
+| `wbnetz_awb` | Althochdeutsches Wörterbuch | 8.–11. Jh. |
+| `wbnetz_lexer` | Lexer (Mittelhochdeutsch) | 12.–15. Jh. |
+| `wbnetz_bmz` | Benecke-Müller-Zarncke (Mittelhochdeutsch) | 12.–15. Jh. |
+| `fwb` | Frühneuhochdeutsches Wörterbuch | 14.–17. Jh. |
+| `dwds` | DWDS | Modern + historisch |
+| `wiktionary` | Wiktionary DE | Alle Epochen, Etymologie |
+| `openthesaurus` | OpenThesaurus | Synonyme (modern) |
 
-Wörterbuchnetz sources (`wbnetz_*`) only appear in the result when the Meta API finds an entry for the queried word. Requesting them via `--sources` has no effect if the word is not indexed.
+Wörterbuchnetz-Quellen (`wbnetz_*`) erscheinen nur im Ergebnis, wenn die Meta-API einen Eintrag für das Wort kennt. `--sources wbnetz_*` hat keinen Effekt, wenn das Wort nicht indexiert ist.
 
-```bash
-python3 word_lookup.py --list-sources          # list all source keys
-python3 word_lookup.py minne --sources wbnetz_lexer,wbnetz_bmz --json
-```
-
-## Error Handling
+### Fehlerbehandlung
 
 ```python
 data = lookup_word("grollen")
 best = data.get("best_definition", {})
 
 if not best.get("definition"):
-    # No usable result — score is 0, source is "none"
-    print("No definition found.")
+    # Kein Treffer — score ist 0, source ist "none"
+    print("Kein Ergebnis gefunden.")
 else:
     print(best["definition"])
-    print(f"Source: {best['source']} (score: {best['score']})")
+    print(f"Quelle: {best['source']} (Score: {best['score']})")
 ```
 
-## Research Log
+### Recherche-Log
 
-Every lookup is automatically appended to `recherche_verlauf.md` (timestamp, word, best definition, source). The file is created on first use.
+Jeder Lookup wird automatisch in `recherche_verlauf.md` gespeichert (Zeitstempel, Wort, beste Definition, Quelle). Datei wird beim ersten Aufruf angelegt.
 
-## MCP Server
+### MCP-Server
 
-`server.py` exposes `lookup_word` as an MCP tool — no CLI invocation needed.
+`server.py` stellt `lookup_word` als MCP-Tool bereit — kein CLI-Aufruf nötig.
 
 ```json
 "word-dict": {
@@ -87,93 +88,93 @@ Every lookup is automatically appended to `recherche_verlauf.md` (timestamp, wor
 }
 ```
 
-System prompt template for agents consuming this tool: see `AGENT_PROMPT.md`.
+System-Prompt-Template für Agenten: siehe `AGENT_PROMPT.md`.
 
 ---
 
-## Kinderbuch-Modernisierung — OpenCode Workflow
+## 2. Kinderbuch-Modernisierung — Workflow
 
-Dieser Workflow wird ausgeführt, wenn der Nutzer ein archaisches oder veraltetes deutsches Wort aus einem alten Kinderbuch modernisieren möchte.
+**Zweck:** Jedes deutsche Wort kindgerecht erklären und ein einfaches Ersatzwort vorschlagen.
 
-### Altersgruppe (Konfiguration)
+**Grundregel: Niemals ablehnen.** Nicht prüfen, ob ein Wort archaisch, veraltet oder selten genug ist. Auch moderne Wörter können für Kinder unbekannt sein (z.B. „Kajüte", „Münze", „Fechten"). Sofort loslegen — kein Kommentieren, kein Nachfragen.
 
-Standard: **Grundschule (6–9 Jahre)** — sehr einfache, direkte Sprache, keine Fremdwörter.
-Kann per Nutzernachricht überschrieben werden (z.B. „für 10–12-Jährige").
+**Altersgruppe:** Standard **Grundschule (6–9 Jahre)** — sehr einfache, direkte Sprache, keine Fremdwörter. Kann per Nutzernachricht überschrieben werden (z.B. „für 10–12-Jährige").
 
-### Eingabe-Modus A — Einzelnes Wort
+**Zwei Agenten:**
+- **Orchestrator** (dieser Agent): sammelt alle Rohdaten, übergibt sie strukturiert an den Kinderbuch-Evaluator.
+- **Kinderbuch-Evaluator**: bewertet die Rohdaten und schreibt die kindgerechte Ausgabe. System-Prompt: `AGENT_PROMPT.md`.
 
-Auslöser: Nutzer gibt ein einzelnes Wort, z.B. „modernisiere: Minne" oder „was bedeutet Fehde für Kinder?"
+---
 
-**Schritt 1a — Wörterbuch-Lookup (immer zuerst):**
+### Modus A — Einzelnes Wort
+
+Auslöser: Nutzer gibt ein einzelnes Wort, z.B. „modernisiere: Minne", „was bedeutet Kajüte für Kinder?", „Fehde kindgerecht erklären".
+
+#### Schritt 1 — Rohdaten sammeln [PFLICHT — beides ausführen, Output prüfen bevor weiter]
+
+**1a — Python-Pipeline [PFLICHT]:**
 ```bash
 python3 word_lookup.py <wort> --json
 ```
-Das Ergebnis kommt als JSON auf stdout. Lese aus:
-- `best_definition.definition` — historische Bedeutung
-- `best_definition.source` / `best_definition.score` — Quellenqualität
-- `sources.openthesaurus.definitions` — moderne Synonyme (falls vorhanden)
+Aus dem JSON extrahieren:
+- `best_definition.definition`
+- `best_definition.score` (0 = kein Treffer)
+- `best_definition.source`
+- `sources.openthesaurus.definitions`
 
-**Schritt 1b — Web-Recherche (parallel zu Schritt 1a, wenn möglich):**
+**1b — Web-Recherche [PFLICHT — gleichzeitig mit 1a, NIEMALS überspringen]:**
 
-Suche im Web nach: `[wort] Synonym einfaches Deutsch` oder `[wort] Bedeutung Kinder`
+MUSS ausgeführt werden — auch wenn die Pipeline einen Treffer liefert. Zwei Suchanfragen:
+1. `<wort> Bedeutung einfach erklärt`
+2. `<wort> Synonym einfaches Deutsch`
 
-Ziel: herausfinden, welches moderne deutsche Wort heute tatsächlich für dieses Konzept verwendet wird. Nutze das Ergebnis als zweite Meinung neben dem Wörterbuch.
+Ergebnisse als Freitext festhalten. Ohne diese Ergebnisse darf nicht zu Schritt 3 weitergegangen werden.
 
-**Schritt 2 — Ersatzwort aus beiden Quellen wählen:**
-- Wenn `sources.openthesaurus.definitions` vorhanden: bevorzuge den ersten oder gebräuchlichsten Eintrag als Kandidaten
-- Wenn die Web-Recherche ein klares, einfaches Wort liefert: vergleiche mit OpenThesaurus
-- Wenn beide leer: nutze die Definition aus Schritt 1a und wähle selbst das treffendste einfache Wort
-- Wenn `best_definition.score == 0`: Versuche Varianten (Grundform, Singular/Plural, alternative Schreibweise) — wenn weiterhin nichts: `⚠️ Kein Wörterbuch-Treffer — eigener Vorschlag`
+#### Schritt 2 — Fallback bei Nulltreffer (score == 0)
 
-**Schritt 3 — Ausgabe generieren:**
+Wenn Pipeline nichts liefert:
 
-```
-**[Originalwort]**
+1. **Wort-Varianten** nochmal durch die Pipeline:
+   - Grundform / Infinitiv
+   - Singular ↔ Plural
+   - Alternative Schreibweise (ü → ue, ß → ss)
 
-**Ersatzwort:** [modernes, kindgerechtes deutsches Wort]
+2. **Fuzzy-Websuche** (wenn Varianten auch leer):
+   - `<wort> was bedeutet`
+   - `<wort> Definition Deutsch`
+   - `<wort> ähnliches Wort Kinder`
 
-**Erklärung:** [1–2 Sätze, die ein Kind im Grundschulalter versteht. Warm, klar, ohne Fremdwörter und ohne Abkürzungen.]
+Alle Ergebnisse für den Handoff sammeln — nicht selbst auswerten.
 
-**Quelle:** [Klarnamen des Wörterbuchs aus der Quelltabelle oben]
-```
+#### Schritt 3 — Handoff an Kinderbuch-Evaluator [PFLICHT — Output prüfen bevor weiter]
 
-Kein umgeschriebener Satz, wenn kein Satzkontext gegeben wurde.
+**STOPP: Nicht selbst formulieren. Kein Ersatzwort, keine Erklärung, keine eigene Ausgabe produzieren.**
 
----
-
-### Eingabe-Modus B — Satz oder Absatz
-
-Auslöser: Nutzer gibt einen Satz oder längeren Text, z.B. „Erkläre diesen Satz für Kinder: ‚Er trug Minne im Herzen, als die Fehde begann.'"
-
-**Schritt 1 — Archaische Wörter identifizieren:**
-Analysiere den Text und identifiziere alle Wörter, die Kinder heute nicht kennen würden (archaisch, veraltet, mittelhochdeutsch, frühneuhochdeutsch). Gib intern eine Liste zurück.
-
-**Schritt 2 — Nachschlagen (für jedes Wort):**
-```bash
-python3 word_lookup.py <wort> --json
-```
-Für jedes identifizierte Wort ausführen. Lese jeweils auch `sources.openthesaurus.definitions` aus — moderne Synonyme helfen beim Ersatzwort.
-
-**Schritt 3 — Ausgabe generieren:**
+Den folgenden Datenblock vollständig ausgeben (als Text sichtbar machen), BEVOR der Evaluator aufgerufen wird:
 
 ```
-**Originaltext:** [Text]
+WORT: <wort>
+ALTERSGRUPPE: <altersgruppe>
 
-**Erklärt für Kinder:**
+WÖRTERBUCH:
+  definition: <best_definition.definition oder leer>
+  score: <best_definition.score>
+  quelle: <best_definition.source>
 
-| Wort | Ersatz | Erklärung |
-|------|--------|-----------|
-| Minne | Liebe | Das alte Wort für das warme Gefühl, das man für jemanden hat, den man sehr mag. |
-| Fehde | Streit | Ein langer, heftiger Streit zwischen zwei Gruppen oder Familien. |
+SYNONYME (OpenThesaurus):
+  <sources.openthesaurus.definitions oder leer>
 
-**Umgeschriebener Satz:** [Text mit Ersatzwörtern, kindgerecht formuliert]
+WEB-ERGEBNISSE:
+  suchanfrage_1: <ergebnis aus "Bedeutung einfach erklärt">
+  suchanfrage_2: <ergebnis aus "Synonym einfaches Deutsch">
+  fuzzy: <ergebnisse aus Fuzzy-Suche oder leer>
 ```
 
----
+Erst nach Ausgabe dieses Blocks: Evaluator mit System-Prompt `AGENT_PROMPT.md` aufrufen und den Block als Eingabe übergeben. Der Evaluator gibt die fertige Ausgabe zurück (Ersatzwort + Erklärung + Quelle).
 
-### Recherche-Log
+#### Schritt 4 — Recherche-Log aktualisieren
 
-Nach jeder Modernisierung wird `recherche_verlauf.md` vervollständigt. `word_lookup.py` schreibt automatisch Wort + Definition in die Datei. Danach hänge du (OpenCode) den Modernisierungs-Teil direkt dahinter an:
+`word_lookup.py` hat bereits Wort + Definition in `recherche_verlauf.md` geschrieben. Die Evaluator-Ausgabe direkt dahinter anhängen:
 
 ```bash
 cat >> recherche_verlauf.md << 'EOF'
@@ -187,7 +188,8 @@ cat >> recherche_verlauf.md << 'EOF'
 EOF
 ```
 
-Das ergibt pro Lookup einen vollständigen Eintrag:
+Vollständiger Eintrag im Log:
+
 ```
 ## Minne — 2026-04-24 16:35
 
@@ -202,12 +204,112 @@ Das ergibt pro Lookup einen vollständigen Eintrag:
 ---
 ```
 
+Kein umgeschriebener Satz, wenn kein Satzkontext gegeben wurde.
+
+---
+
+### Modus B — Satz oder Absatz
+
+Auslöser: Nutzer gibt einen Satz oder längeren Text, z.B. „Erkläre diesen Satz für Kinder: ‚Er trug Minne im Herzen, als die Fehde begann.'"
+
+#### Schritt 1 — Schwierige Wörter identifizieren (Orchestrator)
+
+Alle Wörter im Text markieren, die Kinder (6–9 Jahre) wahrscheinlich nicht kennen: archaische, veraltete, seltene oder fachsprachliche Wörter. Intern eine Liste erstellen.
+
+#### Schritt 2 — Rohdaten für jedes Wort sammeln
+
+Für jedes Wort: Modus A, Schritte 1–2 ausführen (Pipeline + Web parallel, Fallback wenn nötig). Alle Rohdaten-Blöcke sammeln.
+
+#### Schritt 3 — Handoff an Kinderbuch-Evaluator [PFLICHT — nicht selbst formulieren]
+
+**STOPP: Kein Ersatzwort, keine Erklärung, keine eigene Ausgabe produzieren.**
+
+Alle Datenblöcke vollständig ausgeben (als Text sichtbar machen), BEVOR der Evaluator aufgerufen wird. Format wie Modus A, Schritt 3, die Blöcke nacheinander:
+
+```
+WORT: minne
+...
+
+WORT: fehde
+...
+```
+
+Erst nach Ausgabe aller Blöcke: Evaluator mit System-Prompt `AGENT_PROMPT.md` aufrufen. Der Evaluator gibt für jedes Wort Ersatzwort + Erklärung zurück.
+
+#### Schritt 4 — Ausgabe zusammenbauen
+
+```
+**Originaltext:** [Text]
+
+**Erklärt für Kinder:**
+
+| Wort | Ersatz | Erklärung |
+|------|--------|-----------|
+| Minne | Liebe | Das alte Wort für das warme Gefühl, das man für jemanden hat, den man sehr mag. |
+| Fehde | Streit | Ein langer, heftiger Streit zwischen zwei Gruppen oder Familien. |
+
+**Umgeschriebener Satz:** [Text mit Ersatzwörtern, kindgerecht formuliert]
+```
+
+Für jedes Wort auch den Recherche-Log-Eintrag anhängen (wie Modus A, Schritt 4).
+
+---
+
+### Modus C — Buch-Datei direkt bearbeiten
+
+Auslöser: Nutzer hat eine `.docx`-Datei und möchte Wörter direkt im Buchtext ersetzen.
+
+#### Schritt 0 — Einmalige Vorbereitung (einmal pro Buchprojekt)
+
+Wenn noch keine `.md`-Version des Buchs existiert:
+```bash
+python3 docx_to_md.py <pfad/zum/buch.docx> -o buch.md
+```
+Die erzeugte `buch.md` ist die Arbeitsdatei für alle weiteren Schritte.
+
+#### Schritt 1 — Wort nachschlagen (Modus A, Schritte 1–3)
+
+Für das gewünschte Wort vollständig Modus A durchlaufen. Dabei `BUCHDATEI = buch.md` im Arbeitskontext merken.
+
+#### Schritt 2 — Bestätigung einholen
+
+Nach der Ausgabe (Ersatzwort + Erklärung) immer fragen:
+
+> **Soll ich „[Originalwort]" direkt in deiner Buchdatei durch „[Ersatzwort]" ersetzen?**
+
+Erst nach explizitem Ja weitermachen. Kein implizites Annehmen.
+
+#### Schritt 3 — Ersetzung mit Vorschau
+
+Vorschau zuerst:
+```bash
+python3 replace_in_book.py buch.md "[Originalwort]" "[Ersatzwort]" --dry-run
+```
+
+Wenn Vorschau korrekt aussieht, Ersetzung durchführen:
+```bash
+python3 replace_in_book.py buch.md "[Originalwort]" "[Ersatzwort]"
+```
+
+Bei mehreren Vorkommen (z.B. „Minne" kommt 12× vor): User fragen, ob alle ersetzt werden sollen (`--all`), oder nur erstes, oder bestimmte Stellen.
+
+#### Optionen für `replace_in_book.py`
+
+| Flag | Bedeutung |
+|------|-----------|
+| `--dry-run` | Zeigt betroffene Zeilen mit Kontext, ändert nichts |
+| `--all` | Ersetzt alle Vorkommen (Standard: nur erstes) |
+
 ---
 
 ### Allgemeine Regeln
 
-- Den Lookup-Schritt **niemals überspringen** — immer erst `word_lookup.py` ausführen, bevor ein Ersatz generiert wird.
-- Wenn ein LLM-Fallback verwendet wird: immer `⚠️ Kein Wörterbuch-Treffer` markieren.
-- **Keine Abkürzungen** in der Ausgabe — weder in der Erklärung noch im Log. Nicht „ahd.", „mhd.", „stf." o.ä., sondern ausschreiben: „althochdeutsch", „mittelhochdeutsch" — oder weglassen wenn für Kinder irrelevant.
-- Ausgabe auf Deutsch, Ton warm und ermutigend — nicht akademisch.
-- Keine langen Einleitungen, keine Verabschiedungen.
+- **Niemals ablehnen** — jedes Wort sofort verarbeiten, egal ob archaisch oder modern.
+- **Pipeline MUSS ausgeführt werden** — `word_lookup.py` ist Pflicht, kein optionaler Schritt.
+- **Web-Recherche MUSS ausgeführt werden** — parallel zur Pipeline, immer, nicht nur als Fallback. Ohne Web-Ergebnisse ist Schritt 3 gesperrt.
+- **Fuzzy-Fallback bei Nulltreffer** — Varianten + Websuche vor eigenem Vorschlag.
+- **Orchestrator formuliert NICHTS selbst** — kein Ersatzwort, keine Erklärung, keine kindgerechte Ausgabe produzieren. Das ist ausschließlich Aufgabe des Kinderbuch-Evaluators.
+- **Handoff-Block ist Pflicht** — der Datenblock aus Schritt 3 muss sichtbar ausgegeben werden, bevor der Evaluator aufgerufen wird. Ein Handoff, der intern bleibt, gilt als nicht durchgeführt.
+- **Keine Abkürzungen** im Log — „althochdeutsch" statt „ahd.", „mittelhochdeutsch" statt „mhd." — oder weglassen wenn für Kinder irrelevant.
+- **Ton im Evaluator:** warm und ermutigend, nicht akademisch.
+- **Format:** keine langen Einleitungen, keine Verabschiedungen.
