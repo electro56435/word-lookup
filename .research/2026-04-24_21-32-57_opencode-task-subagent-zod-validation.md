@@ -111,7 +111,7 @@ Please provide findings that can be evaluated against this codebase — include 
 2. [Permissions – opencode.ai/docs](https://opencode.ai/docs/permissions/) — `permission.task`, Agent-Overrides, Globs.
 3. [Task / subagent creation fails — must start with "prt" #18211](https://github.com/anomalyco/opencode/issues/18211) — Zod-Fehler, Plugin-Verdacht, Desktop-Kontext.
 4. [supermemoryai/opencode-supermemory Issues #29 / #32](https://github.com/supermemoryai/opencode-supermemory/issues/29) — fehlendes `prt_`-Präfix in Hooks, Fix-Commits.
-5. [task.ts (Fork-Hinweis: sst/opencode)](https://github.com/sst/opencode/blob/dev/packages/opencode/src/tool/task.ts) — Task-Parameter; **Hinweis:** Upstream ist typischerweise **anomalyco/opencode**, URL ggf. an gleichen Pfad dort spiegeln.
+5. [task.ts (anomalyco/opencode, Branch dev)](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/tool/task.ts) — Task-Tool-Parameter / Zod-Schema im kanonischen Repo.
 
 ---
 
@@ -206,14 +206,14 @@ Sources are consistent on mechanics and the supermemory culprit; minor variance 
 
 ### Findings That Apply
 
-1. **`AGENTS.md`** — Den bestehenden Zod-Absatz um die **namentlich genannte Ursache `opencode-supermemory`** und die Issues **https://github.com/anomalyco/opencode/issues/18211** sowie **https://github.com/supermemoryai/opencode-supermemory/issues/29** ergänzen (ein Satz reicht), damit Nutzer nicht nur „irgendein Plugin“ testweise abschalten, sondern das am häufigsten gemeldete Ziel haben.
+1. **`AGENTS.md`** — Zod-Absatz + **Checkliste** (Supermemory raus/neu starten, Stable, `task_id`, kanonischer `task.ts`-Link) — **Stand: nach Evaluation ergänzt**.
 2. **`opencode.json` / `.opencode/agents/`** — Entspricht der Recherche (Permissions in JSON, Subagent in Markdown); **keine strukturelle Änderung nötig**, außer bei Bedarf `hidden: true` für den Subagenten (optional, laut Doku nur UX).
 3. **Betrieb** — Bei weiteren `ses`/`prt`-Fehlern: **Supermemory deaktualisieren oder entfernen**, OpenCode **aktualisieren**, **`task_id` nur zum Fortsetzen** verwenden (Handoff bleibt in `prompt`).
 
 ### Needs Adaptation
 
 - **Versionsnummern** (~v1.2.25, „post-Mar 2026“) sind Recherche-Angaben ohne Verifikation gegen die installierte OpenCode-Build-Nummer — nur als Richtung, nicht als harte Repo-Constraint.
-- **task.ts-Link** zeigt auf **sst/opencode**; kanonisches Upstream-Repo für das Projekt ist **anomalyco/opencode** — für Deep-Links zum gleichen Pfad dort prüfen.
+- ~~**task.ts-Link**~~ — in **`## Sources`** auf **https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/tool/task.ts** korrigiert (Return-Research-Text unten kann historisch noch `sst/opencode` zitieren).
 - **PR #8111** und offene Issues (#13910, #11903) im Text erwähnt — nicht im Repo nachgezogen; bei Bedarf einzeln gegen GitHub verifizieren.
 
 ### Contradictions
@@ -236,6 +236,7 @@ KB Context: none — skipped.
 
 ### Next Concrete Steps
 
-1. ~~`AGENTS.md`: Supermemory + Links~~ — **erledigt** (2026-04-24, Zod-Absatz erweitert).
-2. Lokal: OpenCode-Version notieren; bei Fehlern Plugin-Liste minimieren und erneut **Task → kinderbuch-evaluator** testen.
+1. ~~`AGENTS.md`: Supermemory + Links + Checkliste~~ — **erledigt**.
+2. ~~Research **`## Sources`**: kanonischer task.ts-Link~~ — **erledigt**.
+3. **Lokal (Nutzer):** OpenCode-Version notieren; Plugin-Liste minimieren; **Task → kinderbuch-evaluator** testen. **KB:** für dieses Brief — keine (siehe KB Cross-Reference oben).
 

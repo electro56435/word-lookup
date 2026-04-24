@@ -127,6 +127,12 @@ System-Prompt-Template für Agenten: siehe `scripts/AGENT_PROMPT.md`.
 
 **OpenCode — Zod: „must start with ses“ (oder „prt“):** Das ist **keine** Permission, sondern **interne ID-Validierung** (Session-/Message-Präfixe). Häufig: **Plugins**, die `chat.message` / Parts bearbeiten und IDs **ohne** vorgeschriebenes Präfix liefern — am häufigsten gemeldet: **`opencode-supermemory`** (fehlendes `prt_` in Hooks; siehe https://github.com/anomalyco/opencode/issues/18211 und https://github.com/supermemoryai/opencode-supermemory/issues/29). Vorgehen: Plugin **deaktualisieren oder entfernen**, OpenCode **aktualisieren**; **`plugin` testweise leer** und Task erneut testen; **`task_id` nur zum Fortsetzen** einer vorherigen Task-Antwort setzen (exakte `ses…`-ID), sonst weglassen — kein Wort wie „Fehde“ in ID-Feldern. Der **Handoff-Block** gehört in **`prompt`**. Wenn der Fehler bleibt: **Fallback** (`AGENT_PROMPT` im gleichen Lauf ohne Task).
 
+**Checkliste bei Zod `ses` / `prt` (Reihenfolge):**
+1. **`opencode-supermemory`** und ähnliche Memory-Plugins in **`~/.config/opencode/opencode.json`** (und ggf. Projekt-Config) **testweise entfernen** oder auf eine Version mit `prt_`-Fix aktualisieren; OpenCode **komplett neu starten**; **Task → `kinderbuch-evaluator`** erneut ausführen.
+2. OpenCode auf die **aktuelle Stable** aktualisieren (Versionshinweise in `.research/…-zod-validation.md` sind **Richtwerte**, nicht an dieser Repo-Version gebunden).
+3. **`task_id`** nur setzen, wenn eine **laufende** Subagent-Task-Session **fortgesetzt** wird (ID exakt wie von OpenCode zurückgegeben, Präfix `ses`); sonst weglassen. **Handoff** immer im Feld **`prompt`**, nie als ID.
+4. Task-Tool-Schema im Upstream: https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/tool/task.ts (nicht andere Forks ohne Prüfung verwenden).
+
 ---
 
 ### Modus A — Einzelnes Wort
