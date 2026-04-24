@@ -356,6 +356,9 @@ def save_to_history(result: Dict[str, Any]) -> None:
         summary = result.get("summary", "")
         count_match = re.search(r"(\d+) Quellen", summary)
         count = count_match.group(1) if count_match else "?"
+        if len(definition) > 280:
+            cutoff = definition.rfind(" ", 0, 280)
+            definition = definition[:cutoff if cutoff > 0 else 280] + " …"
         entry = (
             f"## {word} — {timestamp}\n\n"
             f"**Definition:** {definition}\n\n"

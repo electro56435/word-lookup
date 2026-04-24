@@ -166,7 +166,9 @@ Nach jeder Modernisierung wird `recherche_verlauf.md` vervollständigt. `word_lo
 
 ```bash
 cat >> recherche_verlauf.md << 'EOF'
+
 **Ersatzwort:** [modernes Wort]
+
 **Erklärung:** [kindgerechte Erklärung, 1–2 Sätze]
 
 ---
@@ -178,10 +180,12 @@ Das ergibt pro Lookup einen vollständigen Eintrag:
 ```
 ## Minne — 2026-04-24 16:35
 
-**Definition:** minne stf. liebe, zuneigung; insbes. die höfische frauenliebe ...
+**Definition:** minne stf. liebe, zuneigung; insbes. die höfische frauenliebe …
+
 **Quelle:** wbnetz_bmz · 3 Quellen
 
 **Ersatzwort:** Liebe
+
 **Erklärung:** Das alte Wort für das warme Gefühl, das man für jemanden hat, den man sehr mag.
 
 ---
