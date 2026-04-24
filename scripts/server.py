@@ -11,7 +11,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
-import mcp.types as types
 
 from word_lookup import lookup_word
 from docx_to_md import convert_docx

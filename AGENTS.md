@@ -2,6 +2,8 @@
 
 CLI und MCP-Server zum Nachschlagen deutscher Wörter aus bis zu neun Quellen parallel.
 
+**Layout:** Quellcode und Hilfsskripte liegen in **`scripts/`** (z. B. `word_lookup.py`, `server.py`, `AGENT_PROMPT.md`, `opencode.json`). In der Wurzel u. a. `README.md`, `AGENTS.md`, `CLAUDE.md`, `recherche_verlauf.md`.
+
 ---
 
 ## 1. Technische Referenz
@@ -9,9 +11,9 @@ CLI und MCP-Server zum Nachschlagen deutscher Wörter aus bis zu neun Quellen pa
 ### CLI-Nutzung
 
 ```bash
-python3 word_lookup.py <wort> --json
-python3 word_lookup.py --list-sources
-python3 word_lookup.py minne --sources wbnetz_lexer,wbnetz_bmz --json
+python3 scripts/word_lookup.py <wort> --json
+python3 scripts/word_lookup.py --list-sources
+python3 scripts/word_lookup.py minne --sources wbnetz_lexer,wbnetz_bmz --json
 ```
 
 ### Python-Aufruf
@@ -20,7 +22,7 @@ python3 word_lookup.py minne --sources wbnetz_lexer,wbnetz_bmz --json
 import subprocess, json
 
 def lookup_word(word: str, sources: list[str] | None = None) -> dict:
-    cmd = ["python3", "word_lookup.py", word, "--json"]
+    cmd = ["python3", "scripts/word_lookup.py", word, "--json"]
     if sources:
         cmd += ["--sources", ",".join(sources)]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
@@ -72,23 +74,36 @@ else:
     print(f"Quelle: {best['source']} (Score: {best['score']})")
 ```
 
+### HTML-Scraping vs. strukturierte APIs
+
+**DWDS** und **FWB-online** parsen statisches HTML. Vor der Textextraktion entfernt `scripts/word_lookup.py` `script`-, `noscript`- und `style`-Tags, damit typische Meldungen wie „JavaScript aktivieren“ nicht in `definitions` landen (früher: musste ein Modell das ignorieren). **Wiktionary** (MediaWiki-API), **OpenThesaurus** (JSON) und **Wörterbuchnetz** (JSON + KWIC) liefern keinen solchen Browser-Boilerplate.
+
+**FWB Browser-Fallback:** Schlägt die HTTP-Suche/Lemma-Seite fehl, ist der Inhalt leer/kurz oder sieht aus wie ein JS-Platzhalter, versucht `fetch_fwb` automatisch `scripts/fwb_agent_browser.py` (CLI `agent-browser`, muss im PATH liegen: `brew install agent-browser`, ggf. `agent-browser install`). Erfolg: `fetched_via: "agent-browser"` in der FWB-Quelle. Wenn beides scheitert: ursprüngliches HTTP-Ergebnis plus `fwb_browser_fallback` (Detailobjekt) oder `fwb_browser_unavailable` (ohne installierten `agent-browser`). Manuell: `python3 scripts/fwb_agent_browser.py <lemma>`.
+
+### Live-APIs (Rate-Limits, Serverfehler)
+
+Bei Integrationstests oder vielen Lookups nacheinander:
+
+- **Wiktionary:** Häufige Anfragen in kurzer Zeit können **HTTP 403** auslösen (Robot Policy). Zwischen Aufrufen Abstand lassen; nicht viele einzelne Lookups in einem Burst ausführen.
+- **Wörterbuchnetz AWB:** Die Open-API kann gelegentlich **502 (Proxy Error)** liefern — **serverseitig**, später erneut versuchen. Andere Sigles (DWB, Lexer, …) sind oft unabhängig verfügbar.
+
 ### Recherche-Log
 
 Jeder Lookup wird automatisch in `recherche_verlauf.md` gespeichert (Zeitstempel, Wort, beste Definition, Quelle). Datei wird beim ersten Aufruf angelegt.
 
 ### MCP-Server
 
-`server.py` stellt `lookup_word` als MCP-Tool bereit — kein CLI-Aufruf nötig.
+`scripts/server.py` stellt `lookup_word` als MCP-Tool bereit — kein CLI-Aufruf nötig.
 
 ```json
 "word-dict": {
   "type": "local",
-  "command": ["/path/to/.venv/bin/python", "/path/to/server.py"],
+  "command": ["/path/to/.venv/bin/python", "/path/to/projekt/scripts/server.py"],
   "enabled": true
 }
 ```
 
-System-Prompt-Template für Agenten: siehe `AGENT_PROMPT.md`.
+System-Prompt-Template für Agenten: siehe `scripts/AGENT_PROMPT.md`.
 
 ---
 
@@ -102,7 +117,7 @@ System-Prompt-Template für Agenten: siehe `AGENT_PROMPT.md`.
 
 **Zwei Agenten:**
 - **Orchestrator** (dieser Agent): sammelt alle Rohdaten, übergibt sie strukturiert an den Kinderbuch-Evaluator.
-- **Kinderbuch-Evaluator**: bewertet die Rohdaten und schreibt die kindgerechte Ausgabe. System-Prompt: `AGENT_PROMPT.md`.
+- **Kinderbuch-Evaluator**: bewertet die Rohdaten und schreibt die kindgerechte Ausgabe. System-Prompt: `scripts/AGENT_PROMPT.md`.
 
 ---
 
@@ -114,7 +129,7 @@ Auslöser: Nutzer gibt ein einzelnes Wort, z.B. „modernisiere: Minne", „was 
 
 **1a — Python-Pipeline [PFLICHT]:**
 ```bash
-python3 word_lookup.py <wort> --json
+python3 scripts/word_lookup.py <wort> --json
 ```
 Aus dem JSON extrahieren:
 - `best_definition.definition`
@@ -170,11 +185,11 @@ WEB-ERGEBNISSE:
   fuzzy: <ergebnisse aus Fuzzy-Suche oder leer>
 ```
 
-Erst nach Ausgabe dieses Blocks: Evaluator mit System-Prompt `AGENT_PROMPT.md` aufrufen und den Block als Eingabe übergeben. Der Evaluator gibt die fertige Ausgabe zurück (Ersatzwort + Erklärung + Quelle).
+Erst nach Ausgabe dieses Blocks: Evaluator mit System-Prompt `scripts/AGENT_PROMPT.md` aufrufen und den Block als Eingabe übergeben. Der Evaluator gibt die fertige Ausgabe zurück (Ersatzwort + Erklärung + Quelle).
 
 #### Schritt 4 — Recherche-Log aktualisieren
 
-`word_lookup.py` hat bereits Wort + Definition in `recherche_verlauf.md` geschrieben. Die Evaluator-Ausgabe direkt dahinter anhängen:
+`scripts/word_lookup.py` hat bereits Wort + Definition in `recherche_verlauf.md` geschrieben. Die Evaluator-Ausgabe direkt dahinter anhängen:
 
 ```bash
 cat >> recherche_verlauf.md << 'EOF'
@@ -234,7 +249,7 @@ WORT: fehde
 ...
 ```
 
-Erst nach Ausgabe aller Blöcke: Evaluator mit System-Prompt `AGENT_PROMPT.md` aufrufen. Der Evaluator gibt für jedes Wort Ersatzwort + Erklärung zurück.
+Erst nach Ausgabe aller Blöcke: Evaluator mit System-Prompt `scripts/AGENT_PROMPT.md` aufrufen. Der Evaluator gibt für jedes Wort Ersatzwort + Erklärung zurück.
 
 #### Schritt 4 — Ausgabe zusammenbauen
 
@@ -263,7 +278,7 @@ Auslöser: Nutzer hat eine `.docx`-Datei und möchte Wörter direkt im Buchtext 
 
 Wenn noch keine `.md`-Version des Buchs existiert:
 ```bash
-python3 docx_to_md.py <pfad/zum/buch.docx> -o <buchname>.md
+python3 scripts/docx_to_md.py <pfad/zum/buch.docx> -o <buchname>.md
 ```
 Die erzeugte `<buchname>.md` ist die Arbeitsdatei für alle weiteren Schritte.
 
@@ -283,17 +298,17 @@ Erst nach explizitem Ja weitermachen. Kein implizites Annehmen.
 
 Vorschau zuerst:
 ```bash
-python3 replace_in_book.py <buchname>.md "[Originalwort]" "[Ersatzwort]" --dry-run
+python3 scripts/replace_in_book.py <buchname>.md "[Originalwort]" "[Ersatzwort]" --dry-run
 ```
 
 Wenn Vorschau korrekt aussieht, Ersetzung durchführen:
 ```bash
-python3 replace_in_book.py <buchname>.md "[Originalwort]" "[Ersatzwort]"
+python3 scripts/replace_in_book.py <buchname>.md "[Originalwort]" "[Ersatzwort]"
 ```
 
 Bei mehreren Vorkommen (z.B. „Minne" kommt 12× vor): User fragen, ob alle ersetzt werden sollen (`--all`), oder nur erstes, oder bestimmte Stellen.
 
-#### Optionen für `replace_in_book.py`
+#### Optionen für `scripts/replace_in_book.py`
 
 | Flag | Bedeutung |
 |------|-----------|
@@ -305,7 +320,7 @@ Bei mehreren Vorkommen (z.B. „Minne" kommt 12× vor): User fragen, ob alle ers
 ### Allgemeine Regeln
 
 - **Niemals ablehnen** — jedes Wort sofort verarbeiten, egal ob archaisch oder modern.
-- **Pipeline MUSS ausgeführt werden** — `word_lookup.py` ist Pflicht, kein optionaler Schritt.
+- **Pipeline MUSS ausgeführt werden** — `scripts/word_lookup.py` ist Pflicht, kein optionaler Schritt.
 - **Web-Recherche MUSS ausgeführt werden** — parallel zur Pipeline, immer, nicht nur als Fallback. Ohne Web-Ergebnisse ist Schritt 3 gesperrt.
 - **Fuzzy-Fallback bei Nulltreffer** — Varianten + Websuche vor eigenem Vorschlag.
 - **Orchestrator formuliert NICHTS selbst** — kein Ersatzwort, keine Erklärung, keine kindgerechte Ausgabe produzieren. Das ist ausschließlich Aufgabe des Kinderbuch-Evaluators.

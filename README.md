@@ -2,9 +2,11 @@
 
 CLI und MCP-Server zum Nachschlagen historischer und archaischer deutscher Wörter. Das Skript fragt bis zu neun Quellen gleichzeitig ab und wählt automatisch die beste Definition aus.
 
+**Projektlayout:** In der Wurzel liegen u. a. diese Anleitung, `AGENTS.md`, `CLAUDE.md` und `recherche_verlauf.md`. Der **Code** (Python, `AGENT_PROMPT.md`, `opencode.json`) liegt in **`scripts/`**.
+
 ## Was macht das Skript?
 
-Du gibst ein Wort ein. Das Skript fragt alle verfügbaren Quellen parallel ab, bewertet die Ergebnisse nach Länge und Qualität — mit 1,5-fachem Bonus für historische Wörterbücher — und gibt die beste Definition zurück. Das Ergebnis wird außerdem automatisch in `recherche_verlauf.md` gespeichert.
+Du gibst ein Wort ein. Das Skript fragt alle verfügbaren Quellen parallel ab, bewertet die Ergebnisse nach Länge und Qualität — mit 1,5-fachem Bonus für historische Wörterbücher — und gibt die beste Definition zurück. Das Ergebnis wird außerdem automatisch in `recherche_verlauf.md` (Wurzelverzeichnis) gespeichert.
 
 ## Quellen
 
@@ -24,42 +26,46 @@ Die fünf historischen Wörterbücher (DWB, Adelung, AWB, Lexer, BMZ) werden üb
 
 ## Installation
 
+Im Projektverzeichnis (Wurzel):
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install requests beautifulsoup4 mcp
+pip install requests beautifulsoup4 mcp mammoth
 ```
 
 ## Benutzung
 
+Alle Beispiele von der **Repository-Wurzel** aus (nicht im Ordner `scripts/` wechseln, außer du passt Pfade an).
+
 ### Einfacher Aufruf
 
 ```bash
-python word_lookup.py Waldhorn
+python3 scripts/word_lookup.py Waldhorn
 ```
 
 ### JSON-Ausgabe (für Skripte und Agenten)
 
 ```bash
-python word_lookup.py grollen --json
+python3 scripts/word_lookup.py grollen --json
 ```
 
 ### Ergebnis in Datei speichern
 
 ```bash
-python word_lookup.py minne --output ergebnis.json
+python3 scripts/word_lookup.py minne --output ergebnis.json
 ```
 
 ### Nur bestimmte Quellen abfragen
 
 ```bash
-python word_lookup.py Haus --sources wiktionary,wbnetz_dwb --json
+python3 scripts/word_lookup.py Haus --sources wiktionary,wbnetz_dwb --json
 ```
 
 ### Alle verfügbaren Quellen anzeigen
 
 ```bash
-python word_lookup.py --list-sources
+python3 scripts/word_lookup.py --list-sources
 ```
 
 ## Ausgabe
@@ -87,19 +93,19 @@ Das Ergebnis ist ein JSON-Objekt. Das wichtigste Feld ist `best_definition.defin
 
 ## Recherche-Verlauf
 
-Jede Suche wird automatisch in `recherche_verlauf.md` im aktuellen Verzeichnis angehängt — mit Timestamp, Wort, bester Definition und Quelle. Die Datei entsteht beim ersten Aufruf automatisch.
+Jede Suche wird automatisch in `recherche_verlauf.md` im **Repository-Wurzelverzeichnis** angehängt — mit Timestamp, Wort, bester Definition und Quelle. Die Datei entsteht beim ersten Aufruf automatisch.
 
 ## DOCX zu Markdown
 
 ```bash
-python docx_to_md.py dokument.docx
-python docx_to_md.py dokument.docx --output ausgabe.md
+python3 scripts/docx_to_md.py dokument.docx
+python3 scripts/docx_to_md.py dokument.docx --output ausgabe.md
 ```
 
 ## MCP-Server
 
 ```bash
-python server.py
+python3 scripts/server.py
 ```
 
 Stellt zwei MCP-Tools bereit:
@@ -107,14 +113,14 @@ Stellt zwei MCP-Tools bereit:
 - `lookup_word` — Wort nachschlagen, gibt JSON zurück
 - `docx_to_markdown` — Word-Datei in Markdown umwandeln
 
-Eintrag in die MCP-Konfiguration (z.B. für OpenCode):
+Eintrag in die MCP-Konfiguration (z. B. für OpenCode) — Pfade an deine Umgebung anpassen:
 
 ```json
 "word-dict": {
   "type": "local",
-  "command": ["/absoluter/pfad/.venv/bin/python", "/absoluter/pfad/server.py"],
+  "command": ["/absoluter/pfad/.venv/bin/python", "/absoluter/pfad/zum/projekt/scripts/server.py"],
   "enabled": true
 }
 ```
 
-Den System-Prompt für Agenten, die dieses Tool verwenden, findest du in `AGENT_PROMPT.md`.
+Den System-Prompt für Agenten, die dieses Tool verwenden, findest du in `scripts/AGENT_PROMPT.md`.

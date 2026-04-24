@@ -16,8 +16,10 @@ import argparse
 import html
 import json
 import re
+import shutil
 import sys
 import time
+from pathlib import Path
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional
@@ -36,7 +38,8 @@ WBNETZ_METHODS = {"BMZ": "definition"}  # Lexer uses fulltext (definition return
 WBNETZ_API     = "https://api.woerterbuchnetz.de/open-api/dictionaries"
 WBNETZ_HDRS    = {"Accept": "application/json", "User-Agent": "Mozilla/5.0 (compatible; WortLookupBot/1.0)"}
 KWIC_MAX       = 15  # max KWIC windows fetched per entry
-HISTORY_FILE   = "recherche_verlauf.md"
+_PROJECT_ROOT  = Path(__file__).resolve().parent.parent
+HISTORY_FILE   = str(_PROJECT_ROOT / "recherche_verlauf.md")
 
 STATIC_SOURCES = ["wiktionary", "dwds", "fwb", "openthesaurus"]
 WBNETZ_SOURCE_KEYS = [f"wbnetz_{s.lower()}" for s in WBNETZ_SIGLES]
@@ -47,17 +50,24 @@ _cache: Dict[str, Any] = {}
 
 # ── Robuster HTTP-Helfer ───────────────────────────────────────────────────────
 
+def _cache_key(url: str, params: Optional[Dict] = None) -> str:
+    """Stable key including query string so different params are not conflated."""
+    prep = requests.Request("GET", url, params=params or {}).prepare()
+    return prep.url or url
+
+
 def safe_get(url: str, params: Optional[Dict] = None, is_json: bool = False) -> Dict[str, Any]:
     """Holt eine Seite oder JSON mit Wiederholungen und Fehlerschutz."""
-    if url in _cache:
-        return _cache[url]
+    key = _cache_key(url, params)
+    if key in _cache:
+        return _cache[key]
     for attempt in range(MAX_RETRIES):
         try:
             time.sleep(SLEEP_BETWEEN)
             r = requests.get(url, params=params, headers=HEADERS, timeout=TIMEOUT)
             r.raise_for_status()
             result = {"success": True, "data": r.json() if is_json else r.text, "error": None}
-            _cache[url] = result
+            _cache[key] = result
             return result
         except Exception as e:
             if attempt == MAX_RETRIES - 1:
@@ -70,6 +80,12 @@ def clean_text(text: str, maxlen: int = 2000) -> str:
     if not text:
         return ""
     return re.sub(r"\s+", " ", text).strip()[:maxlen]
+
+
+def _strip_invisible_html(soup: BeautifulSoup) -> None:
+    """Entfernt script/noscript/style, damit get_text() keinen JS-Boilerplate inkl. «JavaScript aktivieren» liefert."""
+    for tag in soup.find_all(["script", "noscript", "style"]):
+        tag.decompose()
 
 
 # ── Wiktionary ────────────────────────────────────────────────────────────────
@@ -141,6 +157,7 @@ def fetch_dwds(word: str) -> Dict[str, Any]:
 
     try:
         soup = BeautifulSoup(r["data"], "html.parser")
+        _strip_invisible_html(soup)
         definitions = [
             clean_text(el.get_text(" ", strip=True))
             for el in soup.select(".dwdswb-definition")
@@ -259,8 +276,23 @@ def fetch_woerterbuchnetz_entry(sigle: str, word: str) -> Dict[str, Any]:
 
 # ── FWB-online ────────────────────────────────────────────────────────────────
 
-def fetch_fwb(word: str) -> Dict[str, Any]:
-    """FWB-online — Frühneuhochdeutsch. Slug via Search-HTML, dann Lemma-Seite scrapen."""
+def _fwb_needs_agent_browser(r: Dict[str, Any]) -> bool:
+    """True, wenn HTTP-Scrape fehlgeschlagen ist oder offenbar kein echter Artikel (JS-Hülle)."""
+    if not r.get("success"):
+        return True
+    t = (r.get("definitions") or [""])[0].strip()
+    if len(t) < 50:
+        return True
+    low = t.lower()
+    if "javascript" in low and any(
+        s in low for s in ("aktivier", "einschalt", "bitte", "enable", "turn on")
+    ):
+        return True
+    return False
+
+
+def _fetch_fwb_http(word: str) -> Dict[str, Any]:
+    """FWB-online — Frühneuhochdeutsch. Slug via Search-HTML, dann Lemma-Seite scrapen (nur requests)."""
     search = safe_get(
         "https://fwb-online.de/search",
         params={"q": word.lower(), "type": "lemma"},
@@ -270,6 +302,7 @@ def fetch_fwb(word: str) -> Dict[str, Any]:
 
     try:
         soup = BeautifulSoup(search["data"], "html.parser")
+        _strip_invisible_html(soup)
         prefix = f"/lemma/{word.lower()}."
         link = next(
             (a["href"] for a in soup.find_all("a", href=True) if a["href"].startswith(prefix)),
@@ -284,6 +317,7 @@ def fetch_fwb(word: str) -> Dict[str, Any]:
             return {"source": "fwb", "success": False, "error": "Lemma-Seite nicht erreichbar"}
 
         page = BeautifulSoup(r["data"], "html.parser")
+        _strip_invisible_html(page)
         article = page.find(class_="artikel") or page.find("article") or page.find("main")
         text = clean_text(article.get_text(" ", strip=True) if article else page.get_text(), maxlen=2500)
         return {
@@ -295,6 +329,27 @@ def fetch_fwb(word: str) -> Dict[str, Any]:
         }
     except Exception as e:
         return {"source": "fwb", "success": False, "error": str(e)}
+
+
+def fetch_fwb(word: str) -> Dict[str, Any]:
+    """FWB: zuerst HTTP; bei Fehler/JS-Hülle optional `agent-browser`-Fallback (wenn im PATH)."""
+    r = _fetch_fwb_http(word)
+    if not _fwb_needs_agent_browser(r):
+        return r
+    if not shutil.which("agent-browser"):
+        out = {**r}
+        out["fwb_browser_unavailable"] = "agent-browser nicht im PATH"
+        return out
+    try:
+        from fwb_agent_browser import fetch_fwb_with_agent_browser
+
+        br = fetch_fwb_with_agent_browser(word)
+        if br.get("success"):
+            br["fetched_via"] = "agent-browser"
+            return br
+        return {**r, "fwb_browser_fallback": br}
+    except Exception as e:
+        return {**r, "fwb_browser_error": str(e)}
 
 
 # ── OpenThesaurus ─────────────────────────────────────────────────────────────
@@ -469,11 +524,11 @@ if __name__ == "__main__":
         description="Wort-Lookup Pipeline — historische und archaische deutsche Wörter",
         epilog=(
             "Beispiele:\n"
-            "  python word_lookup.py Waldhorn\n"
-            "  python word_lookup.py grollen --json\n"
-            "  python word_lookup.py minne --output out.json\n"
-            "  python word_lookup.py Haus --sources wiktionary,wbnetz_dwb\n"
-            "  python word_lookup.py --list-sources"
+            "  python3 scripts/word_lookup.py Waldhorn\n"
+            "  python3 scripts/word_lookup.py grollen --json\n"
+            "  python3 scripts/word_lookup.py minne --output out.json\n"
+            "  python3 scripts/word_lookup.py Haus --sources wiktionary,wbnetz_dwb\n"
+            "  python3 scripts/word_lookup.py --list-sources"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

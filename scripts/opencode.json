@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": {
+      "python3*word_lookup*": "allow",
+      "python3*docx_to_md*": "allow",
+      "python3*replace_in_book*": "allow"
+    }
+  }
+}
