@@ -104,15 +104,26 @@ Kann per Nutzernachricht überschrieben werden (z.B. „für 10–12-Jährige").
 
 Auslöser: Nutzer gibt ein einzelnes Wort, z.B. „modernisiere: Minne" oder „was bedeutet Fehde für Kinder?"
 
-**Schritt 1 — Nachschlagen (immer zuerst):**
+**Schritt 1a — Wörterbuch-Lookup (immer zuerst):**
 ```bash
 python3 word_lookup.py <wort> --json
 ```
-Das Ergebnis kommt als JSON auf stdout. Relevant: `best_definition.definition`, `best_definition.source`, `best_definition.score`.
+Das Ergebnis kommt als JSON auf stdout. Lese aus:
+- `best_definition.definition` — historische Bedeutung
+- `best_definition.source` / `best_definition.score` — Quellenqualität
+- `sources.openthesaurus.definitions` — moderne Synonyme (falls vorhanden)
 
-**Schritt 2 — Nicht gefunden?**
-- Wenn `best_definition.score == 0`: Versuche Varianten (Stamm, Singular/Plural, alternative Schreibweise).
-- Wenn weiterhin nichts: Mache einen eigenen Vorschlag, **deutlich markiert** mit `⚠️ Kein Wörterbuch-Treffer — LLM-Vorschlag`.
+**Schritt 1b — Web-Recherche (parallel zu Schritt 1a, wenn möglich):**
+
+Suche im Web nach: `[wort] Synonym einfaches Deutsch` oder `[wort] Bedeutung Kinder`
+
+Ziel: herausfinden, welches moderne deutsche Wort heute tatsächlich für dieses Konzept verwendet wird. Nutze das Ergebnis als zweite Meinung neben dem Wörterbuch.
+
+**Schritt 2 — Ersatzwort aus beiden Quellen wählen:**
+- Wenn `sources.openthesaurus.definitions` vorhanden: bevorzuge den ersten oder gebräuchlichsten Eintrag als Kandidaten
+- Wenn die Web-Recherche ein klares, einfaches Wort liefert: vergleiche mit OpenThesaurus
+- Wenn beide leer: nutze die Definition aus Schritt 1a und wähle selbst das treffendste einfache Wort
+- Wenn `best_definition.score == 0`: Versuche Varianten (Grundform, Singular/Plural, alternative Schreibweise) — wenn weiterhin nichts: `⚠️ Kein Wörterbuch-Treffer — eigener Vorschlag`
 
 **Schritt 3 — Ausgabe generieren:**
 
@@ -121,9 +132,9 @@ Das Ergebnis kommt als JSON auf stdout. Relevant: `best_definition.definition`, 
 
 **Ersatzwort:** [modernes, kindgerechtes deutsches Wort]
 
-**Erklärung:** [1–2 Sätze, die ein Kind im Grundschulalter versteht. Warm, klar, ohne Fremdwörter.]
+**Erklärung:** [1–2 Sätze, die ein Kind im Grundschulalter versteht. Warm, klar, ohne Fremdwörter und ohne Abkürzungen.]
 
-**Quelle:** [best_definition.source — Klarnamen aus der Quelltabelle oben]
+**Quelle:** [Klarnamen des Wörterbuchs aus der Quelltabelle oben]
 ```
 
 Kein umgeschriebener Satz, wenn kein Satzkontext gegeben wurde.
@@ -141,7 +152,7 @@ Analysiere den Text und identifiziere alle Wörter, die Kinder heute nicht kenne
 ```bash
 python3 word_lookup.py <wort> --json
 ```
-Für jedes identifizierte Wort ausführen.
+Für jedes identifizierte Wort ausführen. Lese jeweils auch `sources.openthesaurus.definitions` aus — moderne Synonyme helfen beim Ersatzwort.
 
 **Schritt 3 — Ausgabe generieren:**
 
@@ -197,5 +208,6 @@ Das ergibt pro Lookup einen vollständigen Eintrag:
 
 - Den Lookup-Schritt **niemals überspringen** — immer erst `word_lookup.py` ausführen, bevor ein Ersatz generiert wird.
 - Wenn ein LLM-Fallback verwendet wird: immer `⚠️ Kein Wörterbuch-Treffer` markieren.
+- **Keine Abkürzungen** in der Ausgabe — weder in der Erklärung noch im Log. Nicht „ahd.", „mhd.", „stf." o.ä., sondern ausschreiben: „althochdeutsch", „mittelhochdeutsch" — oder weglassen wenn für Kinder irrelevant.
 - Ausgabe auf Deutsch, Ton warm und ermutigend — nicht akademisch.
 - Keine langen Einleitungen, keine Verabschiedungen.

@@ -343,11 +343,41 @@ def _best_definition(sources: Dict[str, Any]) -> Dict[str, Any]:
     return best or {"source": "none", "definition": "", "score": 0}
 
 
+_ABBREV_MAP = [
+    (re.compile(r'\bahd\.'),  'althochdeutsch'),
+    (re.compile(r'\bmhd\.'),  'mittelhochdeutsch'),
+    (re.compile(r'\bnhd\.'),  'neuhochdeutsch'),
+    (re.compile(r'\balts\.'), 'altsächsisch'),
+    (re.compile(r'\bmnd\.'),  'mittelniederdeutsch'),
+    (re.compile(r'\bmnl\.'),  'mittelniederländisch'),
+    (re.compile(r'\bfries\.'),'friesisch'),
+    (re.compile(r'\bgot\.'),  'gotisch'),
+    (re.compile(r'\blat\.'),  'lateinisch'),
+    (re.compile(r'\bgr\.'),   'griechisch'),
+    (re.compile(r'\bndl\.'),  'niederländisch'),
+    (re.compile(r'\bengl\.'), 'englisch'),
+    (re.compile(r'\bfrz\.'),  'französisch'),
+    (re.compile(r'\bvgl\.'),  'vergleiche'),
+    (re.compile(r'\bvb\.\s*'),'Verb '),
+    (re.compile(r'\badj\.\s*'),'Adjektiv '),
+    (re.compile(r'\badv\.\s*'),'Adverb '),
+    # grammatische Markierungen (stf., swm. etc.) entfernen
+    (re.compile(r'\bst[fmn]\.\s*'), ''),
+    (re.compile(r'\bsw[fmn]\.\s*'), ''),
+]
+
+
+def _expand_abbreviations(text: str) -> str:
+    for pattern, replacement in _ABBREV_MAP:
+        text = pattern.sub(replacement, text)
+    return text
+
+
 def save_to_history(result: Dict[str, Any]) -> None:
     """Hängt das Recherche-Ergebnis formatiert an HISTORY_FILE an."""
     try:
         best = result.get("best_definition", {})
-        definition = best.get("definition", "").strip()
+        definition = _expand_abbreviations(best.get("definition", "").strip())
         if not definition or best.get("score", 0) == 0:
             return
         source = best.get("source", "unbekannt")
