@@ -1,18 +1,28 @@
-# word-lookup
+# Wort-Lookup
 
-CLI and MCP server for looking up historical and archaic German words from multiple sources in parallel.
+CLI und MCP-Server zum Nachschlagen historischer und archaischer deutscher Wörter. Das Skript fragt bis zu neun Quellen gleichzeitig ab und wählt automatisch die beste Definition aus.
 
-## What it does
+## Was macht das Skript?
 
-Queries three sources simultaneously and combines the results:
+Du gibst ein Wort ein. Das Skript fragt alle verfügbaren Quellen parallel ab, bewertet die Ergebnisse nach Länge und Qualität — mit 1,5-fachem Bonus für historische Wörterbücher — und gibt die beste Definition zurück. Das Ergebnis wird außerdem automatisch in `recherche_verlauf.md` gespeichert.
 
-| Source | What it returns |
-|---|---|
-| **DWDS** (`dwds.de`) | Modern and historical definitions, word class, etymology |
-| **Wiktionary DE** | Archaic senses, full etymology chain |
-| **Wörterbuchnetz Meta** | Links to 18+ historical dictionaries (Grimm, Adelung, Campe, etc.) |
+## Quellen
 
-## Setup
+| Quelle | Inhalt | Epoche |
+|--------|--------|--------|
+| **DWB** (Grimm) | Vollartikel aus Grimms Deutschem Wörterbuch | 16.–19. Jh. |
+| **Adelung** | Grammatisch-kritisches Wörterbuch | 18. Jh. |
+| **AWB** | Althochdeutsches Wörterbuch | 8.–11. Jh. |
+| **Lexer** | Mittelhochdeutsches Handwörterbuch | 12.–15. Jh. |
+| **BMZ** | Benecke-Müller-Zarncke (Mittelhochdeutsch) | 12.–15. Jh. |
+| **FWB** | Frühneuhochdeutsches Wörterbuch | 14.–17. Jh. |
+| **DWDS** | Definitionen, Wortart, Etymologie | modern + historisch |
+| **Wiktionary DE** | Bedeutungen, Etymologie | alle Epochen |
+| **OpenThesaurus** | Synonyme | modern |
+
+Die fünf historischen Wörterbücher (DWB, Adelung, AWB, Lexer, BMZ) werden über die Wörterbuchnetz-API abgefragt. Das Skript rekonstruiert den Artikeltext aus sogenannten KWIC-Fenstern — komplett ohne Browser und ohne Webscraping des JavaScript-Portals.
+
+## Installation
 
 ```bash
 python3 -m venv .venv
@@ -20,54 +30,91 @@ source .venv/bin/activate
 pip install requests beautifulsoup4 mcp
 ```
 
-## Usage
+## Benutzung
 
-### Word lookup CLI
+### Einfacher Aufruf
 
 ```bash
 python word_lookup.py Waldhorn
-python word_lookup.py Waldhorn --json
 ```
 
-### DOCX to Markdown converter
+### JSON-Ausgabe (für Skripte und Agenten)
 
 ```bash
-python docx_to_md.py document.docx
-python docx_to_md.py document.docx --output out.md
+python word_lookup.py grollen --json
 ```
 
-### MCP server
+### Ergebnis in Datei speichern
+
+```bash
+python word_lookup.py minne --output ergebnis.json
+```
+
+### Nur bestimmte Quellen abfragen
+
+```bash
+python word_lookup.py Haus --sources wiktionary,wbnetz_dwb --json
+```
+
+### Alle verfügbaren Quellen anzeigen
+
+```bash
+python word_lookup.py --list-sources
+```
+
+## Ausgabe
+
+Das Ergebnis ist ein JSON-Objekt. Das wichtigste Feld ist `best_definition.definition` — dort steht die längste, reichste Definition aus allen erfolgreichen Quellen.
+
+```json
+{
+  "word": "Waldhorn",
+  "timestamp": "2026-04-24 16:12:38",
+  "best_definition": {
+    "source": "wbnetz_dwb",
+    "definition": "waldhorn , n. 1) das ursprünglich auf der jagd gebrauchte gewundene blasinstrument ...",
+    "score": 1332.0
+  },
+  "summary": "Gefunden in 4 Quellen. Beste Quelle: wbnetz_dwb",
+  "sources": {
+    "wbnetz_dwb":    { "success": true,  "definitions": ["..."], "etymology": "" },
+    "wbnetz_adelung": { "success": true,  "definitions": ["..."], "etymology": "" },
+    "dwds":          { "success": true,  "definitions": ["..."], "word_class": "Substantiv" },
+    "openthesaurus": { "success": false, "error": "Keine Synonyme gefunden" }
+  }
+}
+```
+
+## Recherche-Verlauf
+
+Jede Suche wird automatisch in `recherche_verlauf.md` im aktuellen Verzeichnis angehängt — mit Timestamp, Wort, bester Definition und Quelle. Die Datei entsteht beim ersten Aufruf automatisch.
+
+## DOCX zu Markdown
+
+```bash
+python docx_to_md.py dokument.docx
+python docx_to_md.py dokument.docx --output ausgabe.md
+```
+
+## MCP-Server
 
 ```bash
 python server.py
 ```
 
-Exposes two MCP tools:
-- `lookup_word` — looks up a word, returns combined results from all sources
-- `docx_to_markdown` — converts a DOCX file path to Markdown text
+Stellt zwei MCP-Tools bereit:
 
-## MCP registration (OpenCode / opencode config)
+- `lookup_word` — Wort nachschlagen, gibt JSON zurück
+- `docx_to_markdown` — Word-Datei in Markdown umwandeln
 
-Add to your `config.json` under `mcp`:
+Eintrag in die MCP-Konfiguration (z.B. für OpenCode):
 
 ```json
 "word-dict": {
   "type": "local",
-  "command": ["/absolute/path/to/.venv/bin/python", "/absolute/path/to/server.py"],
+  "command": ["/absoluter/pfad/.venv/bin/python", "/absoluter/pfad/server.py"],
   "enabled": true
 }
 ```
 
-## Sources
-
-| Source | URL pattern | Method |
-|---|---|---|
-| DWDS | `https://www.dwds.de/wb/{wort}` | HTML scrape, `.dwdswb-definition` |
-| Wiktionary | `https://de.wiktionary.org/w/api.php` | MediaWiki API |
-| Wörterbuchnetz | `https://api.woerterbuchnetz.de/dictionaries/Meta/lemmata/lemma/{wort}/0/tei-xml` | XML API (discovery only) |
-
-## Known limitations
-
-- Wörterbuchnetz returns links to dictionaries, not definitions directly. Most linked dictionaries (Krünitz, Campe etc.) require JS rendering and are not directly fetchable.
-- DWDS has no public definition API — only a snippets endpoint that returns metadata without definitions.
-- Zeno.org has no stable per-word URL schema.
+Den System-Prompt für Agenten, die dieses Tool verwenden, findest du in `AGENT_PROMPT.md`.

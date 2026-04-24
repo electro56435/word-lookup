@@ -13,7 +13,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 import mcp.types as types
 
-from word_lookup import lookup_all, format_results
+from word_lookup import lookup_word
 from docx_to_md import convert_docx
 
 app = Server("word-dict")
@@ -25,10 +25,11 @@ async def list_tools() -> list[Tool]:
         Tool(
             name="lookup_word",
             description=(
-                "Schlägt ein historisches/altes deutsches Wort in mehreren Quellen nach: "
-                "DWDS (moderne + historische Definitionen), Wiktionary (archaische Bedeutungen + Etymologie), "
-                "und Wörterbuchnetz (Links zu Grimm, Adelung, Campe und 14 weiteren historischen Wörterbüchern). "
-                "Ideal zum Umschreiben alter Kinderbücher ins moderne Deutsch."
+                "Schlägt ein historisches oder archaisches deutsches Wort in mehreren Quellen nach: "
+                "DWDS, Wiktionary, OpenThesaurus, FWB (Frühneuhochdeutsch), "
+                "DWB (Grimm), Adelung, AWB, Lexer, BMZ. "
+                "Gibt strukturiertes JSON zurück mit 'best_definition' (reichste Quelle) und allen Einzelquellen. "
+                "Ideal für historische deutsche Texte, alte Kinderbücher, Mittelhochdeutsch."
             ),
             inputSchema={
                 "type": "object",
@@ -61,8 +62,8 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         wort = arguments.get("wort", "").strip()
         if not wort:
             return [TextContent(type="text", text="Fehler: Kein Wort angegeben.")]
-        results = lookup_all(wort)
-        return [TextContent(type="text", text=format_results(wort, results))]
+        result = lookup_word(wort)
+        return [TextContent(type="text", text=json.dumps(result, indent=2, ensure_ascii=False))]
 
     if name == "docx_to_markdown":
         pfad = arguments.get("pfad", "").strip()
