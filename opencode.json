@@ -1,5 +1,7 @@
 {
-  "bash": {
-    "python word_lookup*": "allow"
+  "permission": {
+    "bash": {
+      "python word_lookup*": "allow"
+    }
   }
 }
