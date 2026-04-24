@@ -84,12 +84,18 @@ def fetch_fwb_with_agent_browser(word: str) -> Dict[str, Any]:
     search_url = f"https://fwb-online.de/search?q={q}&type=lemma"
     session = f"{SESSION_PREFIX}{os.getpid()}-{uuid.uuid4().hex[:10]}"
 
-    # Nur Pfad (z. B. /lemma/haus.s.2n) — volle URL in Python bauen, kein doppeltes JSON-Quote-Chaos
-    js_href = r"""JSON.stringify((() => {
-      const a = document.querySelector('a[href^="/lemma/"]');
-      if (!a) return null;
-      return (a.getAttribute('href') || '').split('?')[0];
-    })())"""
+    # Gleiche Logik wie _fetch_fwb_http in word_lookup.py: erster Link, dessen Pfad mit
+    # /lemma/<suchwort>. beginnt — nicht irgendein erster Treffer (sonst z. B. »rümpfen« statt »Rümpf«).
+    want_prefix = json.dumps(f"/lemma/{w.lower()}.")
+    js_href = f"""JSON.stringify((() => {{
+      const want = {want_prefix};
+      const links = Array.from(document.querySelectorAll('a[href^="/lemma/"]'));
+      for (const el of links) {{
+        const h = (el.getAttribute('href') || '').split('?')[0];
+        if (h.startsWith(want)) return h;
+      }}
+      return null;
+    }})())"""
 
     js_text = r"""JSON.stringify((() => {
       const el = document.querySelector('.artikel') || document.querySelector('article') || document.querySelector('main');

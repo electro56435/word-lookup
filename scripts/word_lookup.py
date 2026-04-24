@@ -276,6 +276,43 @@ def fetch_woerterbuchnetz_entry(sigle: str, word: str) -> Dict[str, Any]:
 
 # ── FWB-online ────────────────────────────────────────────────────────────────
 
+
+_FWB_BEDEUTUNGSINDEX = re.compile(r"Bedeutungsindex\s*»([^«]+)«", re.IGNORECASE)
+
+
+def _fwb_index_lemma_mismatches_query(word: str, text: str) -> bool:
+    """
+    True, wenn der Artikel offenbar zu einem anderen Lemma gehört (z. B. Verweis »rümpfen« bei Suche »Rümpf«).
+    Kein Treffer im Snippet → False (nicht ablehnen).
+    """
+    if not word or not text:
+        return False
+    m = _FWB_BEDEUTUNGSINDEX.search(text[:500])
+    if not m:
+        return False
+    indexed = m.group(1).strip().casefold()
+    q = word.strip().casefold()
+    return indexed != q
+
+
+def _sanitize_fwb_if_wrong_lemma(word: str, r: Dict[str, Any]) -> Dict[str, Any]:
+    """Markiert FWB-Ergebnis als fehlgeschlagen, wenn Bedeutungsindex nicht zum Suchwort passt."""
+    if not r.get("success"):
+        return r
+    defs = r.get("definitions") or []
+    t = defs[0] if defs else ""
+    if not _fwb_index_lemma_mismatches_query(word, t):
+        return r
+    out = {**r}
+    out["success"] = False
+    out["definitions"] = []
+    out["error"] = (
+        f"FWB-Artikel passt nicht zum Lemma „{word}“ (Bedeutungsindex weicht ab — vermutlich anderer Eintrag)."
+    )
+    out["fwb_lemma_mismatch"] = True
+    return out
+
+
 def _fwb_needs_agent_browser(r: Dict[str, Any]) -> bool:
     """True, wenn HTTP-Scrape fehlgeschlagen ist oder offenbar kein echter Artikel (JS-Hülle)."""
     if not r.get("success"):
@@ -320,13 +357,16 @@ def _fetch_fwb_http(word: str) -> Dict[str, Any]:
         _strip_invisible_html(page)
         article = page.find(class_="artikel") or page.find("article") or page.find("main")
         text = clean_text(article.get_text(" ", strip=True) if article else page.get_text(), maxlen=2500)
-        return {
-            "source": "fwb",
-            "success": bool(text),
-            "definitions": [text] if text else [],
-            "etymology": "",
-            "error": None if text else "Kein Artikeltext gefunden",
-        }
+        return _sanitize_fwb_if_wrong_lemma(
+            word,
+            {
+                "source": "fwb",
+                "success": bool(text),
+                "definitions": [text] if text else [],
+                "etymology": "",
+                "error": None if text else "Kein Artikeltext gefunden",
+            },
+        )
     except Exception as e:
         return {"source": "fwb", "success": False, "error": str(e)}
 
@@ -346,7 +386,7 @@ def fetch_fwb(word: str) -> Dict[str, Any]:
         br = fetch_fwb_with_agent_browser(word)
         if br.get("success"):
             br["fetched_via"] = "agent-browser"
-            return br
+            return _sanitize_fwb_if_wrong_lemma(word, br)
         return {**r, "fwb_browser_fallback": br}
     except Exception as e:
         return {**r, "fwb_browser_error": str(e)}
