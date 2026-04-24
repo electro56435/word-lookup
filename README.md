@@ -124,3 +124,5 @@ Eintrag in die MCP-Konfiguration (z. B. für OpenCode) — Pfade an deine Umgebu
 ```
 
 Den System-Prompt für Agenten, die dieses Tool verwenden, findest du in `scripts/AGENT_PROMPT.md`.
+
+**macOS / frischer Rechner / OpenCode:** Schritt-für-Schritt inkl. globaler OpenCode-Config und Kinderbuch-Subagent — `.research/AGENT_SETUP_ANOTHER_MAC.md`.

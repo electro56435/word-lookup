@@ -110,7 +110,9 @@ Wenn `agent-browser` fehlt, funktionieren `word_lookup` und die übrigen Quellen
 
 ---
 
-## 7. MCP-Server (Cursor, OpenCode, etc.)
+## 7. MCP-Server und OpenCode Desktop (macOS)
+
+### 7.1 MCP-Server (Cursor, andere Clients)
 
 **Start (stdio, blockierend):**
 
@@ -131,9 +133,82 @@ python3 scripts/server.py
 }
 ```
 
-**OpenCode / Bash-Permissions:** Beispiel liegt im Repo: `opencode.json` in der **Repository-Wurzel** (Schema `opencode.ai`, Subagent `kinderbuch-evaluator`). Pfade in der lokalen OpenCode-Config ggf. anpassen, nicht blind kopieren, wenn dein Config-Format abweicht.
-
 **Tools des Servers:** `lookup_word`, `docx_to_markdown` — Beschreibung in `scripts/server.py`, Prompt-Texte in `scripts/AGENT_PROMPT.md` und in `AGENTS.md` (Kontext „Kinderbuch-Workflow“).
+
+### 7.2 OpenCode Desktop — Projekt (im Repo, mitziehbar)
+
+Aus der **Git-Wurzel von `word-lookup`** arbeiten (OpenCode lädt Config beim Start nach oben bis zur `.git`).
+
+| Datei / Ordner | Zweck |
+|----------------|--------|
+| **`opencode.json`** (Wurzel) | `$schema`, `permission.bash` für `python3 scripts/…`, `permission.task`, optional `agent.build` / `agent.plan` mit denselben Task-Regeln |
+| **`.opencode/agents/kinderbuch-evaluator.md`** | Subagent `kinderbuch-evaluator` (`mode: subagent`, Prompt per `{file:../../scripts/AGENT_PROMPT.md}`) |
+
+Die genauen Inhalte sind im geklonten Repo gepflegt — **nicht** manuell duplizieren, außer du weißt, was du änderst.
+
+### 7.3 OpenCode Desktop — **globale** macOS-Config (`~/.config/opencode/`)
+
+OpenCode erwartet laut Doku u. a. **`~/.config/opencode/opencode.json`**. Auf manchen Installationen heißt die Datei nur **`config.json`** — beides kann vorkommen. **Empfehlung:** eine Datei als „Quelle der Wahrheit“ nutzen und die andere per Symlink verknüpfen:
+
+```bash
+cd ~/.config/opencode
+cp config.json config.json.bak-$(date +%Y%m%d)   # vor Änderungen
+# Wenn nur config.json existiert:
+ln -sf config.json opencode.json
+```
+
+**Warum global etwas setzen?** Damit **`permission.task`** für **`kinderbuch-evaluator`** (und ggf. `general` / `explore`) auch dann greift, wenn die Projekt-Config allein nicht ausreicht oder globale Defaults Tasks blockieren. Anschließend **OpenCode komplett beenden und neu starten**.
+
+**Minimal-Block zum Einfügen** (in die bestehende JSON einbauen, Struktur anpassen — kein zweites Root-`{}`):
+
+```json
+  "permission": {
+    "task": {
+      "*": "ask",
+      "general": "allow",
+      "explore": "allow",
+      "kinderbuch-evaluator": "allow"
+    }
+  },
+  "agent": {
+    "build": {
+      "permission": {
+        "task": {
+          "*": "ask",
+          "general": "allow",
+          "explore": "allow",
+          "kinderbuch-evaluator": "allow"
+        }
+      }
+    },
+    "plan": {
+      "permission": {
+        "task": {
+          "*": "ask",
+          "general": "allow",
+          "explore": "allow",
+          "kinderbuch-evaluator": "allow"
+        }
+      }
+    }
+  }
+```
+
+- **`"*": "ask"` zuerst**, dann die **`allow`**-Einträge — letzte passende Regel gewinnt (siehe OpenCode-Doku zu Permissions).
+- Eigene Plugins / MCP-Einträge in derselben Datei **beibehalten**; nur die neuen Keys ergänzen.
+
+### 7.4 Wenn Task / Subagent mit Zod scheitert (`must start with "ses"` oder `"prt"`)
+
+Das ist **keine** Bash-Permission, sondern **interne ID-Validierung** (Session- bzw. Message-IDs). Kurzablauf:
+
+1. OpenCode **aktualisieren** (Stable).
+2. **`opencode-supermemory`** (und ähnliche Plugins, die `chat.message` hooken): **deaktualisieren, entfernen oder auf Fix-Version** — siehe https://github.com/anomalyco/opencode/issues/18211 und https://github.com/supermemoryai/opencode-supermemory/issues/29  
+3. **Plugins testweise leer** (`"plugin": []`), neu starten, Task erneut testen; bei Erfolg Plugins einzeln wieder zuschalten.
+4. **`task_id`** beim Task-Tool **nur** setzen, wenn eine vorherige Subagent-Session **fortgesetzt** wird (exakte `ses…`-ID von OpenCode); sonst **weglassen**. Der Kinderbuch-**Handoff** gehört in **`prompt`**, nicht in ID-Felder.
+5. Freie Modelle (z. B. Qwen über OpenCode Zen): können in Subagent-Kontexten **fehlerhafte IDs** erzeugen — zum **Isolieren** ein anderes Modell testen.
+6. Immer noch blockiert: **`AGENTS.md`** — Pipeline-**Fallback** ohne Task (`scripts/AGENT_PROMPT.md` im gleichen Lauf auf den Handoff-Block anwenden).
+
+Details und Checkliste: **`AGENTS.md`** (Abschnitt Kinderbuch + Zod). Task-Schema im Upstream: https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/tool/task.ts
 
 ---
 
@@ -176,15 +251,18 @@ Keine harten Garantien „alle 9 Quellen grün pro Wort“.
 5. [ ] `python3 scripts/word_lookup.py minne --json` — JSON mit `best_definition`
 6. [ ] (optional) `brew install agent-browser && agent-browser install` dann `python3 scripts/fwb_agent_browser.py haus`
 7. [ ] (optional) MCP-Config mit **absoluten** Pfaden zu `.venv/bin/python` und `scripts/server.py`
+8. [ ] (optional, OpenCode Desktop) Projekt aus **Git-Wurzel** öffnen; globale `~/.config/opencode/config.json` bzw. `opencode.json` um **`permission.task`** + **`agent.build`/`plan`** ergänzen (§7.3); bei Bedarf `ln -sf config.json opencode.json`; OpenCode **neu starten**
+9. [ ] (optional) Kinderbuch-Pipeline: Task → `kinderbuch-evaluator` testen; bei Zod-Fehlern §7.4 befolgen
 
-Wenn die Schritte 4–5 grün sind, ist die **gesamte Kern-Pipeline** auf dem neuen Mac einsatzbereit.
+Wenn die Schritte 4–5 grün sind, ist die **gesamte Kern-Pipeline** auf dem neuen Mac einsatzbereit. Schritt 8–9 betreffen nur die **OpenCode-Kinderbuch-Integration**.
 
 ---
 
 ## 12. Verweise im Repo
 
 - Nutzer-Doku: `README.md`
-- Agent-Referenz inkl. Kinderbuch-Pipeline: `AGENTS.md`
-- System-Prompt (MCP): `scripts/AGENT_PROMPT.md`
+- Agent-Referenz inkl. Kinderbuch-Pipeline, Permissions, Zod-Fehler: `AGENTS.md`
+- System-Prompt (Evaluator / MCP): `scripts/AGENT_PROMPT.md`
+- OpenCode-Projektconfig: `opencode.json`, `.opencode/agents/kinderbuch-evaluator.md`
 
 *Stand: für „anderen Mac“ und CI-ähnliche Reproduzierbarkeit gedacht; Pfade stets an die lokale Maschine anpassen.*
