@@ -1,1 +1,4 @@
 .handoff/
+__pycache__/
+*.py[cod]
+.venv/
