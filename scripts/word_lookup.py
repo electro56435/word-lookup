@@ -15,10 +15,12 @@ Output: sauberes JSON-Dict — konsistent für jeden Agent/Modell.
 import argparse
 import html
 import json
+import os
 import re
 import shutil
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -38,14 +40,47 @@ WBNETZ_METHODS = {"BMZ": "definition"}  # Lexer uses fulltext (definition return
 WBNETZ_API     = "https://api.woerterbuchnetz.de/open-api/dictionaries"
 WBNETZ_HDRS    = {"Accept": "application/json", "User-Agent": "Mozilla/5.0 (compatible; WortLookupBot/1.0)"}
 KWIC_MAX       = 15  # max KWIC windows fetched per entry
+ANTHROPIC_API  = "https://api.anthropic.com/v1/messages"
+ANTHROPIC_VER  = "2023-06-01"
+# Recherche-Log: Definition auf 6–8 Zeilen (Anthropic); siehe ANTHROPIC_API_KEY in README.
+# Weit verbreitet; bei Bedarf WORD_LOOKUP_SUMMARY_MODEL setzen (z. B. claude-haiku-4-5).
+_DEFAULT_SUMMARY_MODEL = "claude-3-5-haiku-20241022"
+_SUMMARY_MAX_IN      = 4000  # Zeichen Roh-Definition an das Modell
+_SUMMARY_MAX_LINES     = 8
 _PROJECT_ROOT  = Path(__file__).resolve().parent.parent
 HISTORY_FILE   = str(_PROJECT_ROOT / "recherche_verlauf.md")
+# Jeder Logeintrag endet mit denselben vier Feldern; die letzten beiden ersetzt der Kinderbuch-Evaluator.
+_HISTORY_PENDING_ERSATZ = "*noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*"
+_HISTORY_PENDING_ERKLAERUNG = "*noch ausstehend (Kinderbuch-Evaluator)*"
 
 STATIC_SOURCES = ["wiktionary", "dwds", "fwb", "openthesaurus"]
 WBNETZ_SOURCE_KEYS = [f"wbnetz_{s.lower()}" for s in WBNETZ_SIGLES]
 ALL_SOURCES = STATIC_SOURCES + WBNETZ_SOURCE_KEYS
 
+# Lesbare einzeilige Bezeichnungen für `recherche_verlauf.md` (keine technischen Keys).
+_SOURCE_DESCRIPTION_DE: Dict[str, str] = {
+    "wbnetz_dwb": "Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel",
+    "wbnetz_adelung": "Adelung (Wörterbuchnetz) — 18. Jh.",
+    "wbnetz_awb": "Althochdeutsches Wörterbuch (Wörterbuchnetz) — 8.–11. Jh.",
+    "wbnetz_lexer": "Lexer, Mittelhochdeutsch (Wörterbuchnetz) — 12.–15. Jh.",
+    "wbnetz_bmz": "Benecke-Müller-Zarncke, Mittelhochdeutsch (Wörterbuchnetz) — 12.–15. Jh.",
+    "fwb": "Frühneuhochdeutsches Wörterbuch (FWB-online) — 14.–17. Jh.",
+    "dwds": "DWDS (Digitales Wörterbuch der deutschen Sprache) — modern und historisch",
+    "wiktionary": "Wiktionary Deutsch — freies Onlinelexikon, Bedeutungen und Etymologie",
+    "openthesaurus": "OpenThesaurus — moderne Synonym- und Begriffslisten",
+    "none": "kein Treffer",
+    "unbekannt": "unbekannte Quelle",
+}
+
 _cache: Dict[str, Any] = {}
+
+
+def source_description_de(key: str) -> str:
+    """Kurzbeschreibung der Quelle auf Deutsch (für Logs); Fallback mit Key."""
+    k = (key or "").strip()
+    if k in _SOURCE_DESCRIPTION_DE:
+        return _SOURCE_DESCRIPTION_DE[k]
+    return f"Unbekannte Quelle (`{k}`)" if k else "Unbekannte Quelle"
 
 
 # ── Robuster HTTP-Helfer ───────────────────────────────────────────────────────
@@ -468,6 +503,183 @@ def _expand_abbreviations(text: str) -> str:
     return text
 
 
+# Ab dieser Länge: weiche Umbrüche im Recherche-Log (kein Inhaltsverlust).
+_HISTORY_WRAP_MIN_LEN = 400
+
+
+def _format_definition_for_history(text: str) -> str:
+    """Fügt bei langen Definitionen Leselücken ein (; und Satzende vor Großbuchstaben)."""
+    if len(text) <= _HISTORY_WRAP_MIN_LEN:
+        return text
+    t = text.replace("; ", ";\n\n")
+    t = re.sub(r"\.\s+(?=[A-ZÄÖÜ])", ".\n\n", t)
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    return t.strip()
+
+
+def _normalize_summary_lines(text: str) -> str:
+    """Modell-Ausgabe: Codefences entfernen, auf max. Zeilen begrenzen."""
+    t = (text or "").strip()
+    if t.startswith("```"):
+        t = re.sub(r"^```[a-zA-Z]*\s*", "", t)
+        t = re.sub(r"\s*```\s*$", "", t).strip()
+    lines = [ln.strip() for ln in t.splitlines() if ln.strip()]
+    return "\n".join(lines[:_SUMMARY_MAX_LINES])
+
+
+_SKIP_HEURISTIC_SEGMENT = re.compile(
+    r"^(vergleiche|vgl\.|s\.\s*(das|d\.|oben)|siehe\s+(das|d\.))",
+    re.I,
+)
+_ETYMOLOGY_HINT = re.compile(
+    r"mittelhochdeutsch|althochdeutsch|mittelniederländisch|mittelniederdeutsch|"
+    r"niederländisch|gotisch|friesisch|altsächsisch|\ba[en]gs\.|lateinisch|"
+    r"frühneuhochdeutsch|neuhochdeutsch",
+    re.I,
+)
+_TRASH_SEGMENT_HINT = re.compile(
+    r"\bEs\.\s*\d|Dief\.\s*gl|[Vv]oc\.\s*\d|\b[Gg]l\.\s*\d+",
+    re.I,
+)
+_HEURISTIC_LINE_CAP = 220
+
+
+def _trim_clause(clause: str, cap: int) -> str:
+    s = clause.strip()
+    if len(s) <= cap:
+        return s
+    cut = s.rfind(" ", 0, cap)
+    return (s[: cut if cut > 40 else cap]).rstrip() + " …"
+
+
+def _heuristic_comma_synonym_list(t: str) -> Optional[str]:
+    """OpenThesaurus u. ä.: eine Flut von Kommas, keine Satzstruktur → mehrzeilige Kurzfassung."""
+    if ";" in t or _ETYMOLOGY_HINT.search(t):
+        return None
+    if len(t) > 600:
+        return None
+    items = [x.strip() for x in t.split(",") if x.strip()]
+    if len(items) < 3:
+        return None
+    if any(len(x.split()) > 8 for x in items):
+        return None
+    title = "Synonyme und verwandte Begriffe:"
+    cap = _SUMMARY_MAX_LINES - 1
+    if len(items) > cap:
+        n_show = cap - 1
+        more = len(items) - n_show
+        bullets = [f"• {items[i]}" for i in range(n_show)]
+        bullets.append(f"• (+{more} weitere in der Quelle)")
+    else:
+        bullets = [f"• {x}" for x in items]
+    return title + "\n" + "\n".join(bullets)
+
+
+def _heuristic_summarize_definition(word: str, dictionary_text: str) -> str:
+    """Kompakte Lesefassung ohne API: Semikolon-Sätze filtern, Etymologie extra, max. 8 Zeilen."""
+    del word  # reserviert für spätere Lemma-Kürzung
+    t = re.sub(r"\s+", " ", (dictionary_text or "").strip())
+    if not t:
+        return ""
+    syn = _heuristic_comma_synonym_list(t)
+    if syn:
+        return syn
+    parts = [p.strip() for p in t.split(";") if p.strip()]
+    if not parts:
+        return _trim_clause(t, _HEURISTIC_LINE_CAP * 3)
+
+    etym_line = ""
+    kept: List[str] = []
+    for pl in parts:
+        if len(pl) < 22 and _TRASH_SEGMENT_HINT.search(pl):
+            continue
+        if _SKIP_HEURISTIC_SEGMENT.match(pl):
+            continue
+        dialect_blob = pl.count(",") > 10 and len(pl) > 120 and _ETYMOLOGY_HINT.search(pl)
+        if dialect_blob:
+            cand = _trim_clause(pl, _HEURISTIC_LINE_CAP + 80)
+            if not etym_line or len(cand) > len(etym_line):
+                etym_line = cand
+            continue
+        line = _trim_clause(pl, _HEURISTIC_LINE_CAP)
+        if line and line not in kept:
+            kept.append(line)
+
+    max_sense = max(1, _SUMMARY_MAX_LINES - (1 if etym_line else 0))
+    out = kept[:max_sense]
+    if etym_line:
+        et = etym_line if etym_line.lower().startswith("herkunft") else f"Herkunft: {etym_line}"
+        et = _trim_clause(et, _HEURISTIC_LINE_CAP + 40)
+        if et not in "\n".join(out):
+            out.append(et)
+    out = out[:_SUMMARY_MAX_LINES]
+    if not out:
+        return _trim_clause(t, min(600, len(t)))
+    return "\n".join(out)
+
+
+def _anthropic_summarize_definition(word: str, dictionary_text: str) -> Optional[str]:
+    """Kompakte 6–8-Zeilen-Definition fürs Log (Anthropic Messages API)."""
+    api_key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
+    if not api_key or not (dictionary_text or "").strip():
+        return None
+    model = (os.environ.get("WORD_LOOKUP_SUMMARY_MODEL") or _DEFAULT_SUMMARY_MODEL).strip()
+    snippet = dictionary_text.strip()[:_SUMMARY_MAX_IN]
+    system = (
+        "Du bereitest einen kompakten deutschen Wörterbuch-Auszug für ein Recherche-Log. "
+        "Ausgabe: nur normierter Klartext, 6 bis 8 kurze Zeilen, keine Überschrift, keine Codefences, keine Einleitung.\n"
+        "Beibehalten: Hauptbedeutung(en), modern verständlich; mehrere Sinnen kurz nummerieren (1), 2), …).\n"
+        "Genau eine kurze Zeile zur Herkunft (Etymologie), nur das Wichtigste (z. B. mittelhochdeutsch/althochdeutsch).\n"
+        "Weglassen: reine Lemma-Grammatik ohne Sinninhalt, lange Fremd- und Dialektketten, Bibliographie und Sigeln, "
+        "Verweise wie „siehe das.“ / „vergleiche“, bloße Fundstellen ohne inhaltlichen Zusatz.\n"
+        "Formulierungen sachlich und präzise; Originalzitate nur wenn sie den Sinn klären (höchstens wenige Wörter)."
+    )
+    user_msg = f"Stichwort: {word}\n\nWörterbuchauszug (Roh):\n{snippet}\n"
+    payload = {
+        "model": model,
+        "max_tokens": 900,
+        "system": system,
+        "messages": [{"role": "user", "content": user_msg}],
+    }
+    try:
+        r = requests.post(
+            ANTHROPIC_API,
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": ANTHROPIC_VER,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=60,
+        )
+        r.raise_for_status()
+        data = r.json()
+    except Exception as e:
+        print(f"Warnung: Definition-Zusammenfassung (LLM) fehlgeschlagen: {e}", file=sys.stderr)
+        return None
+    parts = data.get("content") or []
+    raw = "".join(p.get("text", "") for p in parts if p.get("type") == "text")
+    out = _normalize_summary_lines(raw)
+    return out if out else None
+
+
+def _format_timestamp_de(iso: str) -> str:
+    """Wandelt YYYY-MM-DD … in Anzeige TT.MM, HH:MM (ohne Jahr, Recherche-Verlauf + JSON-Hilfsfeld)."""
+    s = (iso or "").strip()
+    if len(s) < 10:
+        return s or "?"
+    try:
+        if len(s) >= 19:
+            dt = datetime.strptime(s[:19], "%Y-%m-%d %H:%M:%S")
+        elif len(s) >= 16:
+            dt = datetime.strptime(s[:16], "%Y-%m-%d %H:%M")
+        else:
+            dt = datetime.strptime(s[:10], "%Y-%m-%d")
+        return f"{dt.day:02d}.{dt.month:02d}, {dt.hour:02d}:{dt.minute:02d}"
+    except ValueError:
+        return s
+
+
 def save_to_history(result: Dict[str, Any]) -> None:
     """Hängt das Recherche-Ergebnis formatiert an HISTORY_FILE an."""
     try:
@@ -476,18 +688,26 @@ def save_to_history(result: Dict[str, Any]) -> None:
         if not definition or best.get("score", 0) == 0:
             return
         source = best.get("source", "unbekannt")
-        timestamp = result.get("timestamp", "")[:16]  # "2026-04-24 16:35"
+        timestamp = _format_timestamp_de(result.get("timestamp", ""))
         word = result.get("word", "")
-        summary = result.get("summary", "")
-        count_match = re.search(r"(\d+) Quellen", summary)
+        result_summary = result.get("summary", "")
+        count_match = re.search(r"(\d+) Quellen", result_summary)
         count = count_match.group(1) if count_match else "?"
-        if len(definition) > 280:
-            cutoff = definition.rfind(" ", 0, 280)
-            definition = definition[:cutoff if cutoff > 0 else 280] + " …"
+        try:
+            n = int(count)
+            count_label = "1 Quelle" if n == 1 else f"{n} Quellen"
+        except ValueError:
+            count_label = f"{count} Quellen"
+        def_summary = (best.get("definition_summary") or "").strip()
+        definition = def_summary if def_summary else _format_definition_for_history(definition)
+        quelle_text = source_description_de(source)
         entry = (
             f"## {word} — {timestamp}\n\n"
-            f"**Definition:** {definition}\n\n"
-            f"**Quelle:** {source} · {count} Quellen\n\n"
+            f"**Definition:**\n\n{definition}\n\n"
+            f"**Quelle:** {quelle_text} · {count_label}\n\n"
+            f"**Ersatzwörter:** {_HISTORY_PENDING_ERSATZ}\n\n"
+            f"**Erklärung:** {_HISTORY_PENDING_ERKLAERUNG}\n\n"
+            f"---\n\n"
         )
         with open(HISTORY_FILE, "a", encoding="utf-8") as f:
             f.write(entry)
@@ -526,11 +746,18 @@ def lookup_word(word: str, sources: Optional[List[str]] = None) -> Dict[str, Any
             tasks[key] = lambda e=entry: fetch_woerterbuchnetz_entry(e["sigle"], word)
 
     if not tasks:
+        ts = time.strftime("%Y-%m-%d %H:%M:%S")
         return {
             "word": word,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": ts,
+            "timestamp_de": _format_timestamp_de(ts),
             "sources": {},
-            "best_definition": {"source": "none", "definition": "", "score": 0},
+            "best_definition": {
+                "source": "none",
+                "definition": "",
+                "definition_summary": "",
+                "score": 0,
+            },
             "summary": "Keine Quellen gefunden.",
         }
 
@@ -546,9 +773,18 @@ def lookup_word(word: str, sources: Optional[List[str]] = None) -> Dict[str, Any
 
     successful = [k for k, v in result_sources.items() if v.get("success")]
     best = _best_definition(result_sources)
+    expanded = _expand_abbreviations((best.get("definition") or "").strip())
+    if best.get("score", 0) and expanded:
+        llm = _anthropic_summarize_definition(word, expanded)
+        heur = _heuristic_summarize_definition(word, expanded)
+        best["definition_summary"] = (llm or heur).strip()
+    else:
+        best["definition_summary"] = ""
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
     result = {
         "word": word,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": ts,
+        "timestamp_de": _format_timestamp_de(ts),
         "sources": result_sources,
         "best_definition": best,
         "summary": f"Gefunden in {len(successful)} Quellen. Beste Quelle: {best['source']}",

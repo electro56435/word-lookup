@@ -1,5 +1,5 @@
 ---
-description: Kinderbuch-Pipeline — nach Rohdaten-Handoff kindgerechtes Ersatzwort, Erklärung und Quelle (nur aus dem übergebenen Block).
+description: Kinderbuch-Pipeline — nach Rohdaten-Handoff 2–3 Ersatzwörter, kindgerechte Erklärung und Quelle (nur aus dem übergebenen Block).
 mode: subagent
 prompt: "{file:../../scripts/AGENT_PROMPT.md}"
 permission:

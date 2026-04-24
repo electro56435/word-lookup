@@ -285,3 +285,259 @@
 
 **Quelle:** wbnetz_dwb · 3 Quellen
 
+## minne — 2026-04-24 22:42
+
+**Definition:** minne , f. amor. 1) das wort ist nur im althochdeutsch, altsächsisch, den daraus erwachsenen dialekten bezeugt: althochdeutsch minna ( aus minja), mittelhochdeutsch minne; altsächsisch altnfr. minnia, minnea, mittelniederdeutsch mittelniederländisch minne; friesisch minne, und …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 6 Quellen
+
+## Splitter — 2026-04-24 22:54
+
+**Definition:** splitter , m. durch spleiszen entstandenes stück. ableitung zu spleiszen ( schwachstufige wurzel b f. ( Weigand 2, 771 bestreitet diese erklärung und leitet splitter durch lautversetzung aus spilter, spelter ab; — in der that wechselt im Crane spilter mit splitter. dagegen …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 5 Quellen
+
+**Ersatzwort:** Span
+
+**Erklärung:** Ein Splitter — oder früher auch „Span“ — ist ein kleines, scharfes Stück von Holz, Glas oder Metall. Wenn man sich daran sticht, bekommt man oft einen kleinen Stich an der Stelle.
+
+---
+
+## Fehde — 2026-04-24 22:55
+
+**Definition:** fehde , f. inimicitia, discordia, odium, althochdeutsch fêhida, gifêhida ( Graff 3, 385 andern partei, trägt eine andere farbe, ist ein gegner. discordia, fehde gehen aus dem begrif der buntheit, concordia, friede aus dem 3, 384 ). nach dieser untersuchung liegt von faihiþa, …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 3 Quellen
+
+**Ersatzwort:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## Groll — 2026-04-24 23:07
+
+**Definition:** groll , m. , ira, odium, rancor. I. form. 1) groll steht im ablautverhältnis zu grell zornig ( s. sp. 95), grellen ; Liesenberg Stieger ma. 148 ), sondern vereinzelt auch obd.: grül, m., groll, zorn Bacher Lusern 264 ; Grull als eigenname für ochsen Rosegger schwache form: den …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 4 Quellen
+
+**Ersatzwort:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## Harnisch — 2026-04-24 23:10
+
+**Definition:** harnisch , m. 1) lorica, ferrea tunica. a) herkunft, form und geschlecht des wortes. harnisch ist erst gegen das 13. jahrhundert, das einheimische geserwe rüstung schwächt sich ab das uns seit dem 15 . jahrhundert geläufigere harnisch arma voc. inc. theut. i 1 b , das noch …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 4 Quellen
+
+**Ersatzwort:** Rüstung
+
+**Erklärung:** So nannte man früher die harte Eisenschutzkleidung, die Ritter im Kampf trugen. Wenn heute Kinder etwas dazu sagen, nennen sie das meist Rüstung.
+
+---
+
+## Fackel — 24.04, 23:12
+
+**Definition:** fackel , f. fax, facula, taeda, althochdeutsch facchala, fachala, ags. fäcele und þäcele, mittelhochdeutsch vackel, nnl. vakkel, schw. fackel, dän. fakkel; oft in bild und gleichnis. mittelhochdeutsch daʒ schœne aufgehe wie ein glanz und ir heil entbrenne wie ein fackel. Es. 62, …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 4 Quellen
+
+**Ersatzwort:** Fackel
+
+**Erklärung:** Eine Fackel ist ein langer Stab. Ganz oben brennt Wachs, Stoff oder etwas anderes – dann leuchtet sie und gibt Wärme ab.
+
+---
+
+## Kamm — 24.04, 23:15
+
+**Definition:** kamm , m. pecten, crista, althochdeutsch champ und champo (kamb, kambo), mittelhochdeutsch . auch die doppelheit des starken und schwachen kamp und kambe, kamm und kamme setzt sich vielfach ins neuhochdeutsch fort, mehrfach mit übrigens der haarkamm jetzt nur kämpel, kampel m. ( …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 3 Quellen
+
+**Ersatzwörter:** Kamm, Haarkamm, Bürste
+
+**Erklärung:** Ein Kamm ist ein kleines Werkzeug mit feinen Stiften. Damit richtet man die Haare, macht sie glatt oder schön zurecht. Früher und heute hängt an manchen Tieren am Kopf auch ein „Kamm“ aus steifen Federn, wie bei einem Schwan.
+
+---
+
+## fackel — 25.04, 00:00
+
+**Definition:**
+
+fackel , f. fax, facula, taeda, althochdeutsch facchala, fachala, ags. fäcele und þäcele, mittelhochdeutsch vackel, nnl. vakkel, schw. fackel, dän. fakkel
+oft in bild und gleichnis. mittelhochdeutsch daʒ schœne aufgehe wie ein glanz und ir heil entbrenne wie ein fackel. Es. 62, 1
+seine augen wie ein fewrige fackel. Dan. 10, 6
+und Elias brach erfur wie ein fewr und sein wort brant wie eine fackel. Sir. 48, 1
+kompt er dahin mit fackeln, lampen und fiel ein groszer stern vom himel, der brante wie eine fackel. offenb. 8, 10
+'das licht macht eine fackel', wenn es zu grosz brennt
+der ist ein narr, der glast z stan ( beistehen ). Brant 28, 3
+lasset euch die fackel offentlicher warheit unter die nasen stoszen. Joh. Wigand die newen Wittenberger. Königsb. 1575. 10 b
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 4 Quellen
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## minne — 25.04, 00:00
+
+**Definition:**
+
+minne , f. amor. 1) das wort ist nur im althochdeutsch, altsächsisch, den daraus erwachsenen dialekten bezeugt: althochdeutsch minna ( aus minja), mittelhochdeutsch minne
+altsächsisch altnfr. minnia, minnea, mittelniederdeutsch mittelniederländisch minne
+friesisch minne, und findet sich sonst nicht, weder im gothischen, noch im μένος mut, sinn, μιμνήσκω sich erinnern, lateinisch mens, memini) zurückführen
+minne aber steht zunächst im ablautverhältnisse zu dem nur dem westgermanischen des fürsorglich, liebend gesinnt seins überspringt, so ist auch für minne die entfaltung der bedeutung gewiesen, die zunächst die handlung …
+ichn tuon diu rehten werc, ichn hân die wâren minne, ze minen ebenkristen, hêrre vater, noch ze dir. Walther 26, 6
+in der christlichen formel in der minne, in caritate: swaʒ ir einem armen siechen welt geben in der minne, durch got, daʒ gebt mir hinne. Helmbrecht 1769
+namentlich auch er in menniskî duruh desse mancunnesminna [intfênc]. Muspilli 104
+dur minne wart der alte junc, der ie was alt âne ende, helde gût, die hatten ellenthaften mût, dar zû die wâre minne. livl. chron. 625
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 6 Quellen
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## haus — 25.04, 00:00
+
+**Definition:**
+
+aus den fenstern eines altverfallenen hauses. H. Heine 2, 337 kalk sint erstarret. Fischart ehez. (1591) A 4 b
+das haus wird gegründet, gebaut, ausgebaut, erweitert, gemauert, gerichtet, gedeckt, abgebrochen, niedergerissen
+Jacob zog gen Suchoth, und bawet im ein haus. 1 Mos. 33, 17
+wo der herr nicht das haus bawet, so erbeiten umb sonst, die dran bawen. ps. 127,
+hier hast du aufgesetzet ohn hoffart, nicht ohn lust, ein haus das dich ergetzet. Opitz 1, 60
+die räume wachsen, es dehnt sich das haus. Schiller glocke v. 115
+übermüthig siehts nicht aus, hohes dach und niedres haus. Göthe 47, 159 , das neue haus ist aufgericht, gedeckt, gemauert ist es nicht. Uhland ged. 61 , man geht, zieht, kehrt ins haus, geht aus dem hause, verläszt, …
+Herkunft: haus , n. domus. I. form und herkunft. Im gothischen ist das jahrh. in den diphthongen umsetzt, so dasz dort house, hier haus entsteht. auf letzterem grunde ruht die neuhochdeutsch schriftform. das mittelniederländisch augenbraue, σκύ - τος haut, …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 5 Quellen
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## splinter — 25.04, 00:01
+
+**Definition:**
+
+splinter , m. splitter, span. nebenform zu splitter, s. das. und splint. besonders dem nl. ( -nd. ) gebiete an
+so schon mittelniederländisch splenter, splinter. sentrix ... doern vel splinter. Dief. gl. 527 b ( lateinisch-nd. voc. 1420)
+splinter, assula, schidium, aculeus ligneus. Kilian
+holl. splinter, vergleiche Franck 940 . auch englisch splinter. in neuhochdeutsch wörterbüchern seit 1605 ( Hulsius ), s. Weigand 2, 770 Hönig 149 a , in Aachen als splengter Müller-Weitz 231 , ostfries. splinter …
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 1 Quelle
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## gremium — 25.04, 00:01
+
+**Definition:**
+
+Arbeitskreis, Ausschuss, Beirat, Gremium, Junta, Komitee, Kommission, Rat
+
+**Quelle:** OpenThesaurus — moderne Synonym- und Begriffslisten · 2 Quellen
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## fackel — 25.04, 00:21
+
+**Definition:**
+
+fackel , f. fax, facula, taeda, althochdeutsch facchala, fachala, ags. fäcele und þäcele, mittelhochdeutsch vackel, nnl. vakkel, schw. fackel, dän. fakkel
+oft in bild und gleichnis. mittelhochdeutsch daʒ schœne aufgehe wie ein glanz und ir heil entbrenne wie ein fackel. Es. 62, 1
+seine augen wie ein fewrige fackel. Dan. 10, 6
+und Elias brach erfur wie ein fewr und sein wort brant wie eine fackel. Sir. 48, 1
+kompt er dahin mit fackeln, lampen und fiel ein groszer stern vom himel, der brante wie eine fackel. offenb. 8, 10
+'das licht macht eine fackel', wenn es zu grosz brennt
+der ist ein narr, der glast z stan ( beistehen ). Brant 28, 3
+lasset euch die fackel offentlicher warheit unter die nasen stoszen. Joh. Wigand die newen Wittenberger. Königsb. 1575. 10 b
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 4 Quellen
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## gremium — 25.04, 00:21
+
+**Definition:**
+
+Synonyme und verwandte Begriffe:
+• Arbeitskreis
+• Ausschuss
+• Beirat
+• Gremium
+• Junta
+• Komitee
+• (+2 weitere in der Quelle)
+
+**Quelle:** OpenThesaurus — moderne Synonym- und Begriffslisten · 2 Quellen
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## fackel — 25.04, 00:21
+
+**Definition:**
+
+fackel , f. fax, facula, taeda, althochdeutsch facchala, fachala, ags. fäcele und þäcele, mittelhochdeutsch vackel, nnl. vakkel, schw. fackel, dän. fakkel
+oft in bild und gleichnis. mittelhochdeutsch daʒ schœne aufgehe wie ein glanz und ir heil entbrenne wie ein fackel. Es. 62, 1
+seine augen wie ein fewrige fackel. Dan. 10, 6
+und Elias brach erfur wie ein fewr und sein wort brant wie eine fackel. Sir. 48, 1
+kompt er dahin mit fackeln, lampen und fiel ein groszer stern vom himel, der brante wie eine fackel. offenb. 8, 10
+'das licht macht eine fackel', wenn es zu grosz brennt
+der ist ein narr, der glast z stan ( beistehen ). Brant 28, 3
+lasset euch die fackel offentlicher warheit unter die nasen stoszen. Joh. Wigand die newen Wittenberger. Königsb. 1575. 10 b
+
+**Quelle:** Deutsches Wörterbuch (Grimm, DWB) im Wörterbuchnetz — historischer Artikel · 4 Quellen
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+
+## gremium — 25.04, 00:21
+
+**Definition:**
+
+Synonyme und verwandte Begriffe:
+• Arbeitskreis
+• Ausschuss
+• Beirat
+• Gremium
+• Junta
+• Komitee
+• (+2 weitere in der Quelle)
+
+**Quelle:** OpenThesaurus — moderne Synonym- und Begriffslisten · 2 Quellen
+
+**Ersatzwörter:** *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*
+
+**Erklärung:** *noch ausstehend (Kinderbuch-Evaluator)*
+
+---
+

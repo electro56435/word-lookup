@@ -34,6 +34,12 @@ source .venv/bin/activate
 pip install requests beautifulsoup4 mcp mammoth
 ```
 
+### Recherche-Log: lesbare Kurzfassung (ohne API-Key)
+
+Die Pipeline erzeugt **`best_definition.definition_summary`** immer **lokal** (Heuristik: Semikolon-Sätze, Filter für Verweise/Fundstellen, optional eine Herkunftszeile). **Kein API-Key nötig.**
+
+Optional kann **`ANTHROPIC_API_KEY`** gesetzt werden — dann wird die Kurzfassung, falls der Aufruf klappt, durch ein **Sprachmodell** ersetzt (oft lesbarer). Ohne Key oder bei Fehler gilt automatisch die **Heuristik**. Optional: **`WORD_LOOKUP_SUMMARY_MODEL`** (Standard: `claude-3-5-haiku-20241022`).
+
 ## Benutzung
 
 Alle Beispiele von der **Repository-Wurzel** aus (nicht im Ordner `scripts/` wechseln, außer du passt Pfade an).
@@ -70,15 +76,17 @@ python3 scripts/word_lookup.py --list-sources
 
 ## Ausgabe
 
-Das Ergebnis ist ein JSON-Objekt. Das wichtigste Feld ist `best_definition.definition` — dort steht die längste, reichste Definition aus allen erfolgreichen Quellen.
+Das Ergebnis ist ein JSON-Objekt. Das wichtigste Feld ist `best_definition.definition` — dort steht die längste, reichste Definition aus allen erfolgreichen Quellen. Feld **`best_definition.definition_summary`** ist die **gekürzte Lesefassung** (ca. 6–8 Zeilen) für Log und schnelle Übersicht — **immer** gefüllt bei Treffer (Heuristik); mit gesetztem **`ANTHROPIC_API_KEY`** kann sie stattdessen vom Modell stammen.
 
 ```json
 {
   "word": "Waldhorn",
   "timestamp": "2026-04-24 16:12:38",
+  "timestamp_de": "24.04, 16:12",
   "best_definition": {
     "source": "wbnetz_dwb",
     "definition": "waldhorn , n. 1) das ursprünglich auf der jagd gebrauchte gewundene blasinstrument ...",
+    "definition_summary": "1) Jagdhorn, gewundenes Blasinstrument …\n…",
     "score": 1332.0
   },
   "summary": "Gefunden in 4 Quellen. Beste Quelle: wbnetz_dwb",
@@ -93,7 +101,7 @@ Das Ergebnis ist ein JSON-Objekt. Das wichtigste Feld ist `best_definition.defin
 
 ## Recherche-Verlauf
 
-Jede Suche wird automatisch in `recherche_verlauf.md` im **Repository-Wurzelverzeichnis** angehängt — mit Timestamp, Wort, bester Definition und Quelle. Die Datei entsteht beim ersten Aufruf automatisch.
+Jede Suche wird automatisch in `recherche_verlauf.md` im **Repository-Wurzelverzeichnis** angehängt — mit Timestamp, Wort und **Definition** (`definition_summary`, bei Treffern üblicherweise durch die **Heuristik** erzeugt; ohne Key). Nur im Ausnahmefall die Rohdefinition mit Umbrüchen. Dazu **Quelle** usw. Die Datei entsteht beim ersten Aufruf automatisch.
 
 ## DOCX zu Markdown
 

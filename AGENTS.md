@@ -39,6 +39,8 @@ def lookup_word(word: str, sources: list[str] | None = None) -> dict:
 | `best_definition.source` | Quell-Key (z.B. `wbnetz_dwb`) | In Zitaten angeben |
 | `best_definition.score` | Qualitätsscore (Länge × Quell-Bonus) | Konfidenzschätzung |
 | `summary` | Lesbare Trefferzusammenfassung | Schnell-Plausibilität |
+| `timestamp` | ISO-Zeit (`YYYY-MM-DD HH:MM:SS`) | Maschinenlesbar |
+| `timestamp_de` | dieselbe Zeit als `TT.MM, HH:MM` (ohne Jahr) | Anzeige wie im Recherche-Verlauf |
 | `sources.<key>.definitions` | Rohdefinitionen je Quelle | Tiefenanalyse |
 | `sources.openthesaurus.definitions` | Kommagetrennte Synonyme | Synonymsuche |
 
@@ -89,7 +91,7 @@ Bei Integrationstests oder vielen Lookups nacheinander:
 
 ### Recherche-Log
 
-Jeder Lookup wird automatisch in `recherche_verlauf.md` gespeichert (Zeitstempel, Wort, beste Definition, Quelle). Datei wird beim ersten Aufruf angelegt.
+Jeder CLI-Lookup hängt an `recherche_verlauf.md` **einen vollständigen Blockeintrag** an: `## Wort — TT.MM, HH:MM` (Tag und Monat **ohne Jahr**), dann **Definition**, **Quelle** (lesbare Beschreibung, kein technischer Key — plus Anzahl, z. B. `· 1 Quelle`), **`Ersatzwörter`** (Platzhalter) und **Erklärung**. Der **Definitionstext** im Log ist **`best_definition.definition_summary`** (bei Treffer **immer**: zuerst Heuristik ohne API-Key; optional ersetzt durch ein **Anthropic**-Modell, wenn `ANTHROPIC_API_KEY` gesetzt ist und der Aufruf gelingt). Nur wenn `definition_summary` leer bliebe, gilt **`best_definition.definition`** mit Umbrüchen. Details `README.md`. Nach dem Lookup stehen **Ersatzwörter** vorerst als *noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)* und **Erklärung** als *noch ausstehend (Kinderbuch-Evaluator)*; der Evaluator ersetzt diese **zwei** Zeilen durch `**Ersatzwörter:** Wort1, Wort2, Wort3` und die **Erklärung**. Jeder Block endet mit `---`. Datei entsteht beim ersten Aufruf.
 
 ### MCP-Server
 
@@ -109,7 +111,7 @@ System-Prompt-Template für Agenten: siehe `scripts/AGENT_PROMPT.md`.
 
 ## 2. Kinderbuch-Modernisierung — Workflow
 
-**Zweck:** Jedes deutsche Wort kindgerecht erklären und ein einfaches Ersatzwort vorschlagen.
+**Zweck:** Jedes deutsche Wort kindgerecht erklären und **zwei bis drei** einfache **Ersatzwörter** vorschlagen.
 
 **Grundregel: Niemals ablehnen.** Nicht prüfen, ob ein Wort archaisch, veraltet oder selten genug ist. Auch moderne Wörter können für Kinder unbekannt sein (z.B. „Kajüte", „Münze", „Fechten"). Sofort loslegen — kein Kommentieren, kein Nachfragen.
 
@@ -121,7 +123,7 @@ System-Prompt-Template für Agenten: siehe `scripts/AGENT_PROMPT.md`.
 
 **OpenCode:** Wenn das **Task-Tool** den Subagenten **`kinderbuch-evaluator`** anbietet (definiert in **`.opencode/agents/kinderbuch-evaluator.md`**, Task-Rechte in **`opencode.json`**): nach dem Handoff-Block **Task** ausführen, Task-Text = kompletter Block. Antwort des Subagenten ungekürzt ausgeben.
 
-**Pflicht — Fallback ohne Subagent (z. B. Cursor, OpenCode ohne geladenes `opencode.json`, Task-Liste ohne `kinderbuch-evaluator`):** Der Subagent ist in dieser Umgebung **nicht spawnbar**. Das ist **kein Grund zum Abbruch**. Unmittelbar nach dem Handoff-Block: die Regeln aus **`scripts/AGENT_PROMPT.md`** auf genau diesen Block anwenden und die Ausgabe **im dort festgelegten Format** (`**Ersatzwort:**` …) in **derselben Antwort** liefern. **Verboten:** Texte wie „Subagent nicht verfügbar“, „nicht verfügbar in der aktuellen Session“ oder nur Rohdaten ohne kindgerechte Ausgabe — die Pipeline gilt erst mit Evaluator-Format als fertig.
+**Pflicht — Fallback ohne Subagent (z. B. Cursor, OpenCode ohne geladenes `opencode.json`, Task-Liste ohne `kinderbuch-evaluator`):** Der Subagent ist in dieser Umgebung **nicht spawnbar**. Das ist **kein Grund zum Abbruch**. Unmittelbar nach dem Handoff-Block: die Regeln aus **`scripts/AGENT_PROMPT.md`** auf genau diesen Block anwenden und die Ausgabe **im dort festgelegten Format** (`**Ersatzwörter:**` mit 2–3 Wörtern, `**Erklärung:**` …) in **derselben Antwort** liefern. **Verboten:** Texte wie „Subagent nicht verfügbar“, „nicht verfügbar in der aktuellen Session“ oder nur Rohdaten ohne kindgerechte Ausgabe — die Pipeline gilt erst mit Evaluator-Format als fertig.
 
 **OpenCode — dauerhaft 🚫 / Permission auf Task:** (1) Arbeitsverzeichnis = **Git-Root dieses Repos** (OpenCode lädt Config beim Start nach oben bis zur `.git`). (2) **App komplett neu starten** nach Änderungen an `opencode.json` / `.opencode/`. (3) In **`~/.config/opencode/opencode.json`** kann `permission.task` mit z. B. nur `general` / `explore` freigeben — dann fehlt **`kinderbuch-evaluator`**. Ergänzen, **nach** einer eventuellen `*`-Regel, z. B. `"kinderbuch-evaluator": "allow"` (letzte passende Regel gewinnt). (4) **MDM-/Managed-Config** (`/Library/Application Support/opencode/` etc.) kann Projekt-Settings überschreiben — dann nur IT oder lokale Managed-Datei anpassen. (5) Bei „Task erlauben?“: **Zulassen** oder „immer für diesen Subagenten“. (6) Geht es weiterhin nicht: **Fallback** wie oben (`AGENT_PROMPT` im selben Lauf).
 
@@ -177,7 +179,7 @@ Alle Ergebnisse für den Handoff sammeln — nicht selbst auswerten.
 
 #### Schritt 3 — Handoff an Kinderbuch-Evaluator [PFLICHT — Output prüfen bevor weiter]
 
-**STOPP: Nicht selbst formulieren. Kein Ersatzwort, keine Erklärung, keine eigene Ausgabe produzieren.**
+**STOPP: Nicht selbst formulieren. Keine Ersatzwörter, keine Erklärung, keine eigene Ausgabe produzieren.**
 
 Den folgenden Datenblock vollständig ausgeben (als Text sichtbar machen), BEVOR der Evaluator aufgerufen wird:
 
@@ -203,30 +205,24 @@ Erst nach Ausgabe dieses Blocks: **OpenCode:** Task-Tool → `kinderbuch-evaluat
 
 #### Schritt 4 — Recherche-Log aktualisieren
 
-`scripts/word_lookup.py` hat bereits Wort + Definition in `recherche_verlauf.md` geschrieben. Die Evaluator-Ausgabe direkt dahinter anhängen:
+`scripts/word_lookup.py` schreibt jeden Treffer sofort als **vollständigen** Eintrag: **Definition**, **Quelle** (lesbar) und Platzhalter für **Ersatzwörter** / **Erklärung** (`*noch ausstehend: 2–3 Ersatzwörter (Kinderbuch-Evaluator)*` bzw. *noch ausstehend (Kinderbuch-Evaluator)* für **Erklärung**), danach `---`.
 
-```bash
-cat >> recherche_verlauf.md << 'EOF'
+Nach der Evaluator-Ausgabe im selben Lauf: die **beiden Platzhalterzeilen** in diesem Eintrag **ersetzen** (nicht doppelt anhängen) — durch **`Ersatzwörter:`** (2–3 Wörter, kommagetrennt) und **Erklärung** aus `AGENT_PROMPT.md`.
 
-**Ersatzwort:** [modernes Wort]
-
-**Erklärung:** [kindgerechte Erklärung, 1–2 Sätze]
-
----
-
-EOF
-```
-
-Vollständiger Eintrag im Log:
+Vollständiger Eintrag (nach dem Evaluator):
 
 ```
-## Minne — 2026-04-24 16:35
+## Minne — 24.04, 16:35
 
-**Definition:** minne stf. liebe, zuneigung; insbes. die höfische frauenliebe …
+**Definition:**
 
-**Quelle:** wbnetz_bmz · 3 Quellen
+minne , f. amor. liebe, zuneigung;
 
-**Ersatzwort:** Liebe
+insbesondere die höfische frauenliebe …
+
+**Quelle:** Benecke-Müller-Zarncke, Mittelhochdeutsch (Wörterbuchnetz) — 12.–15. Jh. · 3 Quellen
+
+**Ersatzwörter:** Liebe, Zuneigung, Herzenswärme
 
 **Erklärung:** Das alte Wort für das warme Gefühl, das man für jemanden hat, den man sehr mag.
 
@@ -251,7 +247,7 @@ Für jedes Wort: Modus A, Schritte 1–2 ausführen (Pipeline + Web parallel, Fa
 
 #### Schritt 3 — Handoff an Kinderbuch-Evaluator [PFLICHT — nicht selbst formulieren]
 
-**STOPP: Kein Ersatzwort, keine Erklärung, keine eigene Ausgabe produzieren.**
+**STOPP: Keine Ersatzwörter, keine Erklärung, keine eigene Ausgabe produzieren.**
 
 Alle Datenblöcke vollständig ausgeben (als Text sichtbar machen), BEVOR der Evaluator aufgerufen wird. Format wie Modus A, Schritt 3, die Blöcke nacheinander:
 
@@ -263,7 +259,7 @@ WORT: fehde
 ...
 ```
 
-Erst nach Ausgabe aller Blöcke: **OpenCode:** Task → `kinderbuch-evaluator` mit allen Blöcken. **Sonst:** `scripts/AGENT_PROMPT.md` auf alle Blöcke anwenden — für jedes Wort Ersatzwort + Erklärung im vorgegebenen Format.
+Erst nach Ausgabe aller Blöcke: **OpenCode:** Task → `kinderbuch-evaluator` mit allen Blöcken. **Sonst:** `scripts/AGENT_PROMPT.md` auf alle Blöcke anwenden — für jedes Wort **Ersatzwörter** (2–3) + **Erklärung** im vorgegebenen Format.
 
 #### Schritt 4 — Ausgabe zusammenbauen
 
@@ -302,9 +298,9 @@ Für das gewünschte Wort vollständig Modus A durchlaufen. Dabei `BUCHDATEI = <
 
 #### Schritt 2 — Bestätigung einholen
 
-Nach der Ausgabe (Ersatzwort + Erklärung) immer fragen:
+Nach der Ausgabe (Ersatzwörter + Erklärung) immer fragen:
 
-> **Soll ich „[Originalwort]" direkt in deiner Buchdatei durch „[Ersatzwort]" ersetzen?**
+> **Soll ich „[Originalwort]“ in deiner Buchdatei durch ein Wort aus deiner Ersatzwörter-Liste ersetzen (voreingestellt: erstes Wort der Liste)?**
 
 Erst nach explizitem Ja weitermachen. Kein implizites Annehmen.
 
@@ -312,12 +308,12 @@ Erst nach explizitem Ja weitermachen. Kein implizites Annehmen.
 
 Vorschau zuerst:
 ```bash
-python3 scripts/replace_in_book.py <buchname>.md "[Originalwort]" "[Ersatzwort]" --dry-run
+python3 scripts/replace_in_book.py <buchname>.md "[Originalwort]" "[gewähltes Ersatzwort aus der Liste]" --dry-run
 ```
 
 Wenn Vorschau korrekt aussieht, Ersetzung durchführen:
 ```bash
-python3 scripts/replace_in_book.py <buchname>.md "[Originalwort]" "[Ersatzwort]"
+python3 scripts/replace_in_book.py <buchname>.md "[Originalwort]" "[gewähltes Ersatzwort aus der Liste]"
 ```
 
 Bei mehreren Vorkommen (z.B. „Minne" kommt 12× vor): User fragen, ob alle ersetzt werden sollen (`--all`), oder nur erstes, oder bestimmte Stellen.
@@ -337,7 +333,7 @@ Bei mehreren Vorkommen (z.B. „Minne" kommt 12× vor): User fragen, ob alle ers
 - **Pipeline MUSS ausgeführt werden** — `scripts/word_lookup.py` ist Pflicht, kein optionaler Schritt.
 - **Web-Recherche MUSS ausgeführt werden** — parallel zur Pipeline, immer, nicht nur als Fallback. Ohne Web-Ergebnisse ist Schritt 3 gesperrt.
 - **Fuzzy-Fallback bei Nulltreffer** — Varianten + Websuche vor eigenem Vorschlag.
-- **Orchestrator ohne Evaluator-Rolle:** Solange der Handoff-Block noch nicht da ist, kein Ersatzwort und keine kindgerechte Erklärung ausgeben. **Nach** dem Block: **entweder** Task → `kinderbuch-evaluator` **oder** (wenn Subagent nicht verfügbar) dieselbe Ausgabe wie der Evaluator laut `scripts/AGENT_PROMPT.md` — nie mit „Subagent fehlt“ enden.
+- **Orchestrator ohne Evaluator-Rolle:** Solange der Handoff-Block noch nicht da ist, keine **Ersatzwörter**-Zeile und keine kindgerechte **Erklärung** ausgeben. **Nach** dem Block: **entweder** Task → `kinderbuch-evaluator` **oder** (wenn Subagent nicht verfügbar) dieselbe Ausgabe wie der Evaluator laut `scripts/AGENT_PROMPT.md` — nie mit „Subagent fehlt“ enden.
 - **Task-Tool** in OpenCode bevorzugen; fehlt es, zählt der **AGENT_PROMPT-Fallback** als vollständige Pipeline.
 - **Handoff-Block ist Pflicht** — der Datenblock aus Schritt 3 muss sichtbar ausgegeben werden, bevor der Task-Aufruf erfolgt. Ein Handoff, der intern bleibt, gilt als nicht durchgeführt.
 - **Keine Abkürzungen** im Log — „althochdeutsch" statt „ahd.", „mittelhochdeutsch" statt „mhd." — oder weglassen wenn für Kinder irrelevant.
